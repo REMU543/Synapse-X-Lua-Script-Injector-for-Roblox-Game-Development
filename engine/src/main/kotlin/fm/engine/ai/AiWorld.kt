@@ -64,8 +64,10 @@ object Board {
     }
 
     fun appointManager(world: World, club: Club, rng: Rng) {
+        // Score once per candidate (a random term inside a sort selector would break the comparator contract).
         val pool = world.staff.values.filter { it.clubId < 0 && it.role == StaffRole.MANAGER && !it.retired }
-            .sortedByDescending { -kotlin.math.abs(it.reputation - club.reputation) + it.quality() * 2 + rng.nextDouble() * 5 }
+            .map { it to (-kotlin.math.abs(it.reputation - club.reputation) + it.quality() * 2 + rng.nextDouble() * 5) }
+            .sortedByDescending { it.second }.map { it.first }
         val m = pool.firstOrNull() ?: return
         m.clubId = club.id
         m.contract = Contract(club.id, world.today, world.season + 2, WorldGenerator.staffWage(world.nation(club.nationId), StaffRole.MANAGER, m.quality()))

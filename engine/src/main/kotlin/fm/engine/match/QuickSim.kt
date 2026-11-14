@@ -130,8 +130,8 @@ object QuickSim {
     }
 
     private fun scorerWeight(p: Player, slot: Slot): Double {
-        val posW = when (slot.position.line) { Line.ATT -> if (slot.position == Position.ST) 5.0 else 3.0; Line.MID -> 1.4; Line.DEF -> 0.35; Line.GK -> 0.0 }
-        return posW * (0.4 + p.attr(Attr.FINISHING) / 20.0 + 0.3 * p.attr(Attr.OFF_THE_BALL) / 20.0)
+        val posW = when (slot.position.line) { Line.ATT -> if (slot.position == Position.ST) 3.0 else 2.2; Line.MID -> 1.2; Line.DEF -> 0.4; Line.GK -> 0.0 }
+        return posW * (0.6 + p.attr(Attr.FINISHING) / 20.0 + 0.3 * p.attr(Attr.OFF_THE_BALL) / 20.0)
     }
 
     private fun assistWeight(p: Player, slot: Slot): Double {

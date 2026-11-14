@@ -154,6 +154,18 @@ object Transfers {
         }
     }
 
+    /**
+     * Pre-season safety net: every club ends up with at least [MIN_SQUAD] players (free agents
+     * first, otherwise academy call-ups), so retirements and expiries can never break a club.
+     */
+    fun ensureMinimumSquads(world: World) {
+        for (club in world.clubs.values.sortedBy { it.id }) {
+            val rng = Rng.stream(world.seed, "minsquad", club.id, world.today.toLong())
+            var guard = 0
+            while (world.squad(club.id).size < MIN_SQUAD && guard++ < 30) signFreeAgent(world, club, rng, world.squad(club.id))
+        }
+    }
+
     private fun signFreeAgent(world: World, club: Club, rng: Rng, squad: List<Player>) {
         val line = groupNeed(squad) ?: Line.MID
         val nation = world.nation(club.nationId)

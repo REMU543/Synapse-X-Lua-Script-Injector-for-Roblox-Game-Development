@@ -26,8 +26,8 @@ class MatchEngine2D(val setup: MatchSetup) {
         private const val N = 22
         /** Calibration knobs (see MatchCalibrationTest). */
         var SHOOT_WEIGHT = 1.0
-        var FINISH_FACTOR = 0.7
-        var XG_SCALE = 0.5
+        var FINISH_FACTOR = 1.0
+        var XG_SCALE = 0.68
         var REACTION_BASE = 0.35
         var INTERCEPT_FACTOR = 0.6
         var PASS_DIST_PENALTY = 0.004
@@ -280,6 +280,17 @@ class MatchEngine2D(val setup: MatchSetup) {
         if (ballX < 0 || ballX > L) {
             val endX = if (ballX < 0) 0.0 else L
             val defending = if (ownGoalX(0) == endX) 0 else 1
+            val speed = hypot(bvx, bvy)
+            val ownTouch = lastTouchTeam == defending
+            // A slow ball rolling toward goal is gathered by the keeper; most deflections go for a corner.
+            val counts = if (ownTouch) rng.chance(0.15) && speed > 8 else speed > 14 && rng.chance(0.5)
+            if (abs(ballY - W / 2) < GOAL_HALF && ballZ < GOAL_H && !counts) {
+                if (ownTouch) {
+                    stats[1 - defending].corners++
+                    setRestart(Restart.CORNER, 1 - defending, if (endX == 0.0) 0.5 else L - 0.5, if (ballY < W / 2) 0.5 else W - 0.5, 4.5)
+                } else setRestart(Restart.GOAL_KICK, defending, if (endX == 0.0) 5.5 else L - 5.5, W / 2, 3.0)
+                return
+            }
             if (abs(ballY - W / 2) < GOAL_HALF && ballZ < GOAL_H) {
                 // Ball crossed the goal line between the posts (e.g. deflection / own goal).
                 dbg("goal_lineCross")
@@ -769,7 +780,9 @@ class MatchEngine2D(val setup: MatchSetup) {
                 else { owner = -1; bvx = rng.gaussian() * 4; bvy = rng.gaussian() * 4; lastTouch = k; lastTouchTeam = 1 - t; passer = -1; passTarget = -1 }
                 return
             }
-            val pFoul = (0.09 + 0.16 * at(k, Attr.AGGRESSION) - 0.07 * at(k, Attr.TACKLING)).coerceIn(0.03, 0.35)
+            val inOwnBoxTackle = uOf(t, px[o]) > L - 16.5 && abs(py[o] - W / 2) < 20.16
+            val pFoul = (0.09 + 0.16 * at(k, Attr.AGGRESSION) - 0.07 * at(k, Attr.TACKLING)).coerceIn(0.03, 0.35) *
+                (if (inOwnBoxTackle) 0.22 else 1.0)
             if (rng.chance(pFoul)) { foul(k, o); return }
             tackleCooldown[k] = 1.2 // beaten
         }

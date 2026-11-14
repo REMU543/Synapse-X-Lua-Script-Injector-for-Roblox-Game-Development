@@ -348,6 +348,7 @@ class Career(val world: World) {
         Transfers.expireContracts(world)
         Development.retirements(world)
         Development.staffTurnover(world)
+        Transfers.ensureMinimumSquads(world)
         // Every club must still have a manager.
         for (club in world.clubs.values) if (club.managerId < 0 && club.id != world.manager.clubId) Board.appointManager(world, club, Rng.stream(world.seed, "appoint", club.id, world.season.toLong()))
         for (c in world.clubs.values) Finance.closeSeason(world, c)

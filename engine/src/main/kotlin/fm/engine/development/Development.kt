@@ -151,8 +151,10 @@ object Development {
             val rng = Rng.stream(world.seed, "youth", world.season.toLong(), club.id)
             val target = world.populationTarget[nation.id] ?: 1
             val current = counts[nation.id] ?: 1
-            val popF = (target.toDouble() / current).coerceIn(0.5, 1.6)
-            val n = ((2.5 + club.youthRecruitment / 5.0 + rng.nextDouble() * 2) * popF).toInt().coerceIn(1, 9)
+            // Population control: intake shrinks quickly when a nation has more players than its target.
+            val ratio = target.toDouble() / current
+            val popF = (ratio * ratio).coerceIn(0.25, 1.8)
+            val n = ((1.2 + club.youthRecruitment / 8.0 + rng.nextDouble() * 2) * popF).toInt().coerceIn(1, 7)
             val youthCoach = club.staffIds.mapNotNull { world.staff[it] }.firstOrNull { it.role == StaffRole.YOUTH_COACH }?.youthWork ?: 6
             val created = mutableListOf<Player>()
             repeat(n) {
@@ -212,6 +214,9 @@ object Development {
             else -> 0.97
         }
         if (p.clubId < 0 && age >= 29) chance += 0.35
+        // Unattached fringe players drop out of professional football.
+        if (p.clubId < 0 && p.ca < 70) chance += 0.3
+        if (p.clubId < 0 && age >= 24) chance += 0.15
         if (p.ca < 50 && age >= 30) chance += 0.2
         if (p.injuryDays > 120) chance += 0.2
         return chance.coerceAtMost(1.0)

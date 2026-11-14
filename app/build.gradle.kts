@@ -27,7 +27,12 @@ android {
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    testOptions { unitTests.isIncludeAndroidResources = true }
 }
+
+// The world is a mutable object graph observed through GameViewModel.version; strong skipping
+// would skip composables whose (same-instance) world parameter changed internally.
+composeCompiler { enableStrongSkippingMode = false }
 
 dependencies {
     implementation(project(":engine"))
@@ -42,5 +47,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.test:core:1.6.1")
     implementation("androidx.compose.ui:ui-tooling-preview")
 }

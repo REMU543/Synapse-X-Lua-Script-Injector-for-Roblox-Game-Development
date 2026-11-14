@@ -1,6 +1,6 @@
 # Football Manager Android (working title) — Technical Blueprint
 
-Status: **DRAFT — awaiting approval before major implementation**
+Status: **APPROVED 2026-11-14** — implementation under way; see FEATURE_CHECKLIST.md. (Save format changed to a snapshot for the MVP; see ARCHITECTURE.md.)
 Date: 2026-11-14
 Scope: Task 23 of the master prompt (project discovery and technical blueprint).
 

@@ -1,59 +1,53 @@
-# Synapse X Lua Script Injector for Roblox Game Development 🚀🎮
+# Manajer Bola — Football Manager Android (working title)
 
-## Overview
+An offline-first football management simulation for Android, written in Kotlin. You manage a club
+across decades in a fictional, procedurally evolving football world built on real-style
+league structures (Indonesia playable, with Malaysia, Thailand, Vietnam and Japan simulated
+in the background, plus a continental cup).
 
-Welcome to the Synapse X Lua Script Injector repository for Roblox game development! Synapse X is a powerful tool that allows developers to write and test advanced Lua scripts for game customization and experimentation in the Roblox platform. Whether you're looking to automate tasks, modify games, or enhance gameplay, Synapse X provides the capabilities you need to take your Roblox projects to the next level.
+> All clubs, players and staff are fictional and generated deterministically from a world seed.
+> No proprietary data, code, names or assets from other games are used.
 
-![Synapse X Logo](https://github.com/Ajitabh85/Synapse-X-Lua-Script-Injector-for-Roblox-Game-Development/releases)
+## Status
 
-## Features
+The engine is playable end to end (career → seasons → decades) and covered by tests,
+including a 30-season stress test. The Android app (Jetpack Compose) builds into a debug APK.
+See [FEATURE_CHECKLIST.md](docs/FEATURE_CHECKLIST.md) for what is done and what is not.
 
-- **Lua Script Injection**: Inject custom Lua scripts into Roblox games for various purposes.
-- **Game Automation**: Automate repetitive tasks within Roblox games.
-- **Game Modification**: Modify game functionalities and behaviors to suit your preferences.
-- **Script Execution**: Execute Lua scripts in-game to achieve desired outcomes.
-- **Lua Scripting**: Write and test Lua scripts seamlessly within the Roblox environment.
+## Modules
 
-## Installation
+| Module | What it is |
+|---|---|
+| `core` | Pure Kotlin domain model, deterministic RNG, calendar, money, attributes, tactics, i18n (Indonesian/English) |
+| `engine` | Simulation: world generation, competitions, 2D match engine, market, finance, development, AI, save system |
+| `tools` | JVM command-line tools: headless multi-season simulation, a text-mode career, save validation |
+| `app` | Android app (Jetpack Compose UI, Canvas match renderer). Built only when an Android SDK is present |
 
-To get started with Synapse X, you can download the tool from the following link:
-[![Download Synapse X](https://github.com/Ajitabh85/Synapse-X-Lua-Script-Injector-for-Roblox-Game-Development/releases)](https://github.com/Ajitabh85/Synapse-X-Lua-Script-Injector-for-Roblox-Game-Development/releases)
+## Build & run
 
-*Note: Make sure to launch the downloaded file to begin using Synapse X for your Roblox development projects.*
+Requirements: JDK 17+ (tested with 21). The Android app also needs the Android SDK (platform 35, build-tools 35).
 
-If the provided link does not work or you need alternative options, please check the "Releases" section of this repository.
+```bash
+./gradlew :engine:test                       # unit + integration tests (~1 min)
+./gradlew :engine:test --tests '*StressTest*' -Pstress            # 30-season stress test
+./gradlew :engine:test --tests '*StressTest*' -Pstress -Dseasons=50
+./gradlew :tools:run --args="simulate --seasons 10 --seed 2026"   # headless simulation report
+./gradlew :tools:run --args="play" -q --console=plain             # play a career in the terminal
+./gradlew :app:assembleDebug                 # APK at app/build/outputs/apk/debug/app-debug.apk
+```
 
-## Repository Topics
+Install on a device: `adb install -r app/build/outputs/apk/debug/app-debug.apk` (or copy the APK
+to the phone and open it with "install unknown apps" allowed).
 
-- Game Automation
-- Game Development
-- Game Modification
-- Game Utilities
-- Lua Injector
-- Lua Programming
-- Lua Scripting
-- Lua Scripts
-- Programming Tools
-- Roblox
-- Roblox API
-- Roblox Customization
-- Roblox Development
-- Roblox Scripting
-- Roblox Tools
-- Script Execution
+## Documentation
 
-## Get Involved
+- [Technical blueprint](docs/TECHNICAL_BLUEPRINT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Game design document](docs/GAME_DESIGN_DOCUMENT.md)
+- [Database / save schema](docs/DATABASE_SCHEMA.md)
+- [Roadmap](docs/ROADMAP.md) · [Feature checklist](docs/FEATURE_CHECKLIST.md)
+- [Development log](docs/DEVELOPMENT_LOG.md) · [Testing report](docs/TESTING_REPORT.md) · [Performance report](docs/PERFORMANCE_REPORT.md)
 
-If you're passionate about game development on the Roblox platform and Lua scripting, we welcome you to contribute to this repository. Feel free to share your ideas, submit bug reports, or even suggest new features to enhance the functionality of Synapse X.
+## License
 
-Let's collaborate and make Roblox game development even more exciting together!
-
-## Additional Resources
-
-For tutorials, guides, and additional resources on using Synapse X and Lua scripting in Roblox, visit our [official website](https://github.com/Ajitabh85/Synapse-X-Lua-Script-Injector-for-Roblox-Game-Development/releases).
-
-Thank you for being a part of the Synapse X community! Happy coding and gaming on Roblox! 🌟🎉
-
----
-
-By implementing Synapse X in your Roblox game development workflow, you can unlock endless possibilities for customization, automation, and experimentation. Join the vibrant community of developers utilizing this powerful Lua script injector to elevate their games and create unique experiences for players. Explore the features, unleash your creativity, and take your Roblox projects to new heights with Synapse X! 🚀🎮
+Apache-2.0 (see `LICENSE`).
