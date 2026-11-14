@@ -21,18 +21,8 @@ import androidx.compose.ui.unit.sp
 import fm.core.*
 
 @Composable
-fun SectionCard(title: String? = null, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(12.dp)) {
-            if (title != null) {
-                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(6.dp))
-            }
-            content()
-        }
-    }
-}
+fun SectionCard(title: String? = null, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) =
+    Panel(title, modifier.fillMaxWidth(), content = content)
 
 @Composable
 fun KeyValue(k: String, v: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
@@ -61,7 +51,11 @@ fun ClubBadge(club: Club?, size: Dp = 28.dp) {
     val c1 = Color(club?.primaryColor ?: 0xFF888888)
     val c2 = Color(club?.secondaryColor ?: 0xFFFFFFFF)
     Box(Modifier.size(size).clip(CircleShape).background(c1), contentAlignment = Alignment.Center) {
-        Text(club?.shortName?.take(3) ?: "-", color = if (c2 == c1) Color.White else c2, fontSize = (size.value * 0.33f).sp, fontWeight = FontWeight.Bold)
+        // Pick a readable text colour: the secondary colour if it contrasts, otherwise black/white.
+        val lum = 0.299f * c1.red + 0.587f * c1.green + 0.114f * c1.blue
+        val lum2 = 0.299f * c2.red + 0.587f * c2.green + 0.114f * c2.blue
+        val txt = if (kotlin.math.abs(lum - lum2) > 0.35f) c2 else if (lum > 0.55f) Color.Black else Color.White
+        Text(club?.shortName?.take(3) ?: "-", color = txt, fontSize = (size.value * 0.32f).sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -122,7 +116,7 @@ fun <T> SortableTable(rows: List<T>, cols: List<Col<T>>, key: (T) -> Any, onClic
             }
         }
         items(sorted, key = key) { r ->
-            Row(Modifier.fillMaxWidth().clickable { onClick(r) }.padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clickable { onClick(r) }.padding(horizontal = 8.dp, vertical = if (LocalCompact.current) 4.dp else 7.dp), verticalAlignment = Alignment.CenterVertically) {
                 for (c in cols) {
                     val mod = if (c.width == Dp.Unspecified) Modifier.weight(1f) else Modifier.width(c.width)
                     Box(mod) { c.cell(r) }

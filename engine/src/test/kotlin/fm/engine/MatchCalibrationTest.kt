@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 class MatchCalibrationTest {
     private data class Agg(var n: Int = 0, var goals: Int = 0, var homeWins: Int = 0, var draws: Int = 0,
                            var shots: Int = 0, var onT: Int = 0, var passes: Int = 0, var passC: Int = 0,
-                           var fouls: Int = 0, var yellows: Int = 0, var corners: Int = 0, var offsides: Int = 0, var xg: Double = 0.0)
+                           var fouls: Int = 0, var yellows: Int = 0, var corners: Int = 0, var offsides: Int = 0, var xg: Double = 0.0, var reds: Int = 0)
 
     private fun run(detail: Detail, matches: Int): Agg {
         val w = TestWorlds.world(7)
@@ -25,14 +25,14 @@ class MatchCalibrationTest {
             if (r.homeGoals == r.awayGoals) agg.draws++
             for (s in r.stats) {
                 agg.shots += s.shots; agg.onT += s.onTarget; agg.passes += s.passes; agg.passC += s.passesCompleted
-                agg.fouls += s.fouls; agg.yellows += s.yellows; agg.corners += s.corners; agg.offsides += s.offsides; agg.xg += s.xg
+                agg.fouls += s.fouls; agg.yellows += s.yellows; agg.corners += s.corners; agg.offsides += s.offsides; agg.xg += s.xg; agg.reds += s.reds
             }
         }
         val n = agg.n.toDouble()
         println("[$detail] n=${agg.n} goals/m=${"%.2f".format(agg.goals / n)} homeWin=${"%.0f".format(100 * agg.homeWins / n)}% " +
             "draw=${"%.0f".format(100 * agg.draws / n)}% shots/team=${"%.1f".format(agg.shots / n / 2)} onT=${"%.1f".format(agg.onT / n / 2)} " +
             "xg/team=${"%.2f".format(agg.xg / n / 2)} passes/team=${"%.0f".format(agg.passes / n / 2)} pass%=${"%.0f".format(100.0 * agg.passC / agg.passes.coerceAtLeast(1))} " +
-            "fouls=${"%.1f".format(agg.fouls / n / 2)} yel=${"%.1f".format(agg.yellows / n / 2)} corners=${"%.1f".format(agg.corners / n / 2)} offs=${"%.1f".format(agg.offsides / n / 2)}")
+            "fouls=${"%.1f".format(agg.fouls / n / 2)} yel=${"%.1f".format(agg.yellows / n / 2)} corners=${"%.1f".format(agg.corners / n / 2)} offs=${"%.1f".format(agg.offsides / n / 2)} reds/match=${"%.2f".format(agg.reds / n)}")
         return agg
     }
 
@@ -48,6 +48,8 @@ class MatchCalibrationTest {
         assertTrue(shots in 6.0..22.0, "shots per team $shots")
         val passPct = a.passC.toDouble() / a.passes
         assertTrue(passPct in 0.6..0.92, "pass completion $passPct")
+        val reds = a.reds.toDouble() / a.n
+        assertTrue(reds < 0.4, "red cards per match $reds")
     }
 
     @Test

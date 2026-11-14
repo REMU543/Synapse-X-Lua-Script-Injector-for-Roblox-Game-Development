@@ -130,7 +130,8 @@ class SaveStore(private val dir: File) {
 /** Save-format migrations. Each step upgrades a world from version N to N+1. */
 object Migrations {
     private val steps: Map<Int, (World) -> World> = mapOf(
-        // 1 -> 2 will go here when the schema changes; new fields get defaults automatically.
+        // 1 -> 2: dynamics (relationship, happiness, promises, press). New fields have defaults, nothing to convert.
+        1 to { w -> w },
     )
 
     fun migrate(world: World, fromVersion: Int): World {

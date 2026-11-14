@@ -117,6 +117,16 @@ class Player(
     var joinedDay: Int = 0,
     /** Weeks without first-team football this season (affects morale & development). */
     var benchWeeks: Int = 0,
+    /** Relationship with the (user) manager, 0–100. */
+    var relationship: Int = 50,
+    /** Cached happiness 0–100 (see Dynamics). */
+    var happiness: Int = 65,
+    /** Weeks the player has been seriously unhappy (drives requests). */
+    var unhappyWeeks: Int = 0,
+    /** True once the player has asked to leave. */
+    var wantsOut: Boolean = false,
+    /** Last day the manager talked privately with the player (limits spam). */
+    var lastChatDay: Int = -999,
 ) {
     val name: String get() = "$firstName $lastName".trim()
     val shortName: String get() = if (firstName.isEmpty()) lastName else "${firstName.first()}. $lastName"
@@ -463,6 +473,33 @@ class ManagerProfile(
     val name get() = "$firstName $lastName".trim()
 }
 
+enum class PromiseType(val id: String, val en: String) {
+    PLAYING_TIME("Lebih banyak waktu bermain", "More playing time"),
+    NEW_CONTRACT("Kontrak baru", "A new contract"),
+    SIGN_PLAYER("Rekrut pemain baru di posisinya", "Sign a player for his position"),
+    SELL_IF_OFFER("Dijual jika ada tawaran layak", "Sold if a fair offer arrives");
+    fun label(lang: Lang) = if (lang == Lang.ID) id else en
+}
+
+@Serializable
+data class Promise(
+    val playerId: Long,
+    val type: PromiseType,
+    val madeDay: Int,
+    val deadlineDay: Int,
+    var resolved: Boolean = false,
+    var kept: Boolean = false,
+    /** Appearances at the time of the promise (for playing-time promises). */
+    val appsAtStart: Int = 0,
+)
+
+/** One press-conference question waiting for the manager's answer. */
+@Serializable
+data class PressQuestion(val id: Int, val key: String, val args: List<String> = emptyList(), val playerId: Long = -1)
+
+@Serializable
+data class PressConference(val day: Int, val pre: Boolean, val fixtureId: Long, val questions: List<PressQuestion>, var answered: Int = 0)
+
 @Serializable
 data class WorldSettings(
     var lang: Lang = Lang.ID,
@@ -495,6 +532,12 @@ class World(
     /** Target active-player population per nation (keeps the world bounded). */
     val populationTarget: MutableMap<Int, Int> = linkedMapOf(),
     var userTacticFamiliarity: Int = 50,
+    val promises: MutableList<Promise> = mutableListOf(),
+    var pendingPress: PressConference? = null,
+    /** Media hype around the user's club, 0–100 (raises pressure). */
+    var mediaHype: Int = 50,
+    /** Dressing-room atmosphere, 0–100 (cached weekly). */
+    var atmosphere: Int = 60,
 ) {
     fun newId(): Long = nextId++
     fun nation(id: Int) = nations.first { it.id == id }

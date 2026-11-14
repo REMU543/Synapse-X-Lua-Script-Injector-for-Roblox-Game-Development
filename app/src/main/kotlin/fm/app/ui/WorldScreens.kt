@@ -5,6 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -96,7 +99,7 @@ fun ClubScreen(vm: GameViewModel, clubId: Long) {
     vm.version // recompose when the world changes
     val w = vm.world ?: return
     val club = w.clubs[clubId] ?: run { Text(vm.t("Anda belum memiliki klub.", "You have no club."), Modifier.padding(16.dp)); return }
-    LazyColumn {
+    LazyVerticalGrid(GridCells.Adaptive(380.dp), Modifier.fillMaxSize().padding(6.dp)) {
         item {
             SectionCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -151,7 +154,7 @@ fun FinanceScreen(vm: GameViewModel) {
     val w = vm.world ?: return
     val club = w.userClub ?: return
     val f = club.finance
-    LazyColumn {
+    LazyVerticalGrid(GridCells.Adaptive(380.dp), Modifier.fillMaxSize().padding(6.dp)) {
         item {
             SectionCard(vm.t("Ringkasan", "Overview")) {
                 KeyValue(vm.t("Saldo", "Balance"), Money.format(club.balance, vm.lang), if (club.balance < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
@@ -238,7 +241,7 @@ fun ProfileScreen(vm: GameViewModel) {
     val c = vm.career ?: return
     val w = c.world
     val m = w.manager
-    LazyColumn {
+    LazyVerticalGrid(GridCells.Adaptive(380.dp), Modifier.fillMaxSize().padding(6.dp)) {
         item {
             SectionCard(m.name) {
                 KeyValue(vm.t("Kebangsaan", "Nationality"), w.nation(m.nationId).name(vm.lang))
@@ -283,7 +286,7 @@ fun ProfileScreen(vm: GameViewModel) {
 fun SettingsScreen(vm: GameViewModel) {
     vm.version // recompose when the world changes
     val w = vm.world ?: return
-    LazyColumn {
+    LazyVerticalGrid(GridCells.Adaptive(380.dp), Modifier.fillMaxSize().padding(6.dp)) {
         item {
             SectionCard(vm.t("Simpan", "Save")) {
                 KeyValue(vm.t("Slot", "Slot"), vm.slot)
@@ -296,7 +299,10 @@ fun SettingsScreen(vm: GameViewModel) {
         }
         item {
             SectionCard(vm.t("Tampilan", "Display")) {
-                Row(verticalAlignment = Alignment.CenterVertically) { Text(vm.t("Tema gelap", "Dark theme"), Modifier.weight(1f)); Switch(vm.dark, { vm.dark = it }) }
+                Text(vm.t("Tema", "Theme"), style = MaterialTheme.typography.labelLarge)
+                for (t in ThemeChoice.entries) Row(Modifier.fillMaxWidth().clickable { vm.setThemeChoice(t) }, verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(vm.theme == t, { vm.setThemeChoice(t) }); Text(t.label(vm.lang))
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(vm.t("Bahasa", "Language"), Modifier.weight(1f))
                     FilterChip(vm.lang == Lang.ID, { vm.setLang(Lang.ID) }, { Text("ID") }); Spacer(Modifier.width(6.dp))

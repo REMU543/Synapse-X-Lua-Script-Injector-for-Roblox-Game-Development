@@ -59,3 +59,24 @@ potential as noisy star ratings until knowledge is high.
 ## Simulation detail levels
 FULL (2D agents) for the user's matches; REDUCED (minute model with scorers, cards, injuries)
 for nations marked as detailed; LIGHT (Poisson) for the rest. All calibrated to the same targets.
+
+## Match day flow
+Press conference → briefing (opposition analysis, prediction, assistant advice) → pre-match team
+talk → live match (half-time team talk) → match report → full-time team talk → press conference.
+Every step can be skipped; the assistant can attend the press conferences.
+
+Team talk tones: calm, passionate, assertive, praise, criticise, no pressure, demand more. Each
+tone has a base effect for the situation (stage, score, favourite/underdog), modified per player by
+temperament, professionalism, pressure handling, ambition, morale and relationship with the manager.
+Reactions change morale and give an in-match motivation of up to ±5% on effective attributes.
+
+## Squad dynamics
+Influence = leadership, reputation, age, tenure, status and determination. Happiness = base +
+explained factors (see FEATURE_CHECKLIST). Atmosphere = influence-weighted happiness. Unhappiness
+lowers morale; long unhappiness produces complaints and transfer requests. Promises have a 70-day
+deadline; broken promises hit the player hard and spread to the leaders of the dressing room.
+
+## Interface principles
+Landscape only. Information-dense panels and sortable tables in the tradition of desktop football
+management games, but with an original visual identity (own palettes, layout and icons; no assets,
+skins or trademarks from other games).

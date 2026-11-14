@@ -19,3 +19,17 @@
   over-concentrated scorers; Compose strong skipping prevented screens from refreshing.
 - Android app: Compose UI for all main sections and the live 2D match; Robolectric smoke test.
 - Results: all tests green; 30-season stress test green.
+
+## 2026-11-14 — Landscape UI, match day and dynamics
+- User asked for an interface and features as close as possible to FM24/FM26, landscape only.
+  Agreed scope: genre conventions (sidebar navigation, dense tables, panels, match-day flow) with an
+  original look; not a copy of another game's skin or assets.
+- User choices: whole app landscape; priorities "match day" and "dynamics & interaction"; phones and
+  tablets; selectable themes.
+- Engine: `dynamics` package (Dynamics, Interactions, TeamTalk, Press), `game/MatchDay.kt` (Assistant
+  preview/live advice/report, MatchDay state machine), in-match motivation in the 2D engine, schema v2.
+- UI: new shell, compact typography for phones, dashboard grids, 12-column squad table, two-pane
+  tactics, dynamics screen, chat dialog, full match-day flow with landscape live match.
+- Bugs fixed: red cards 0.5 → 0.15 per match; live-match controls overflowing on phones; badge text
+  contrast; initialisation order of engine fields.
+- Tests: 22 engine + 2 landscape UI tests (phone and tablet) with screenshots in `docs/screenshots`.

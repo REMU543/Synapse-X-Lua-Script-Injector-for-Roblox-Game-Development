@@ -7,8 +7,8 @@ emulator (no KVM), so the Android UI is tested with Robolectric on the JVM.
 
 | Suite | Command | Result |
 |---|---|---|
-| Engine unit/integration (16 tests) | `./gradlew :engine:test` | ✅ all pass (~1 min) |
-| Android UI smoke test (Robolectric + Compose) | `./gradlew :app:testDebugUnitTest` | ✅ pass |
+| Engine unit/integration (22 tests) | `./gradlew :engine:test` | ✅ all pass (~1 min) |
+| Android UI tests, landscape phone + tablet (Robolectric + Compose, with screenshots) | `./gradlew :app:testDebugUnitTest` | ✅ pass |
 | 30-season stress test | `./gradlew :engine:test --tests '*StressTest*' -Pstress` | ✅ pass (~6 min) |
 
 ### What the tests cover (master prompt §21)
@@ -26,7 +26,8 @@ emulator (no KVM), so the Android UI is tested with Robolectric on the JVM.
 | Determinism | same seed ⇒ identical world after 120 days; match engine deterministic | ✅ |
 | User transfers & finances | bid accepted, money moves, ledger consistent; low bids rejected/countered | ✅ |
 | Development | most youngsters improve, most veterans decline, CA never exceeds PA | ✅ |
-| UI flow | start → new career → all 13 screens → match day → live match (frames advance) → all match tabs → result recorded → save → load | ✅ |
+| UI flow (landscape) | start → new career → all screens → private chat → match day: press → briefing → team talk → live match → report → full-time talk → press → home → save → load | ✅ |
+| Dynamics | hierarchy, unhappy benched star requests transfer, broken promise consequences, personality-dependent chats, team-talk suggestions, full match-day state machine | ✅ |
 
 ### Match engine calibration (`MatchCalibrationTest`, 60 full matches; 2,000 for quick models)
 
@@ -38,6 +39,7 @@ emulator (no KVM), so the Android UI is tested with Robolectric on the JVM.
 | Shots / team | 18 | 11 | 11 | 12–14 |
 | Pass completion | 77% | 78% | – | 75–85% |
 | Penalties / match | ~0.2 | – | – | ~0.25 |
+| Red cards / match | 0.15 | ~0.07 | – | ~0.15 |
 
 ## Known issues / observations
 * FULL engine: corners (~1.2/team) are rarer than real football (~5); shots slightly high.

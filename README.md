@@ -14,6 +14,14 @@ The engine is playable end to end (career → seasons → decades) and covered b
 including a 30-season stress test. The Android app (Jetpack Compose) builds into a debug APK.
 See [FEATURE_CHECKLIST.md](docs/FEATURE_CHECKLIST.md) for what is done and what is not.
 
+## Screenshots (phone, landscape)
+
+| Home | Squad | Live match |
+|---|---|---|
+| ![](docs/screenshots/03_home.png) | ![](docs/screenshots/04_squad.png) | ![](docs/screenshots/22_live.png) |
+| Briefing | Team talk | Match report |
+| ![](docs/screenshots/20_preview.png) | ![](docs/screenshots/21_teamtalk.png) | ![](docs/screenshots/24_report.png) |
+
 ## Modules
 
 | Module | What it is |

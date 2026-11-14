@@ -58,6 +58,11 @@ class MatchEngine2D(val setup: MatchSetup) {
     // Cached normalised attributes [index][attr] in 0..1 (familiarity applied).
     private val a = Array(N) { DoubleArray(Attr.COUNT) }
 
+    /** Team-talk motivation per pitch index (−1…+1); scales effective attributes by up to ±5%. */
+    private val motivation = DoubleArray(N)
+    private val motivationById = HashMap<Long, Double>()
+
+
     fun teamOf(i: Int) = if (i < 11) 0 else 1
 
     // ------------------------------------------------------------------ ball
@@ -142,6 +147,7 @@ class MatchEngine2D(val setup: MatchSetup) {
 
     private fun place(i: Int, p: Player, slot: Slot) {
         playerAt[i] = p; slotAt[i] = slot; active[i] = true
+        motivation[i] = motivationById[p.id] ?: 0.0
         energy[i] = (p.condition / 100.0).coerceIn(0.35, 1.0)
         val fam = fm.engine.ability.Ability.familiarity(p, slot.position)
         val famF = 0.72 + 0.28 * fam
@@ -150,7 +156,13 @@ class MatchEngine2D(val setup: MatchSetup) {
         px[i] = wx; py[i] = wy; tx[i] = wx; ty[i] = wy
     }
 
-    private fun at(i: Int, attr: Attr) = a[i][attr.ordinal]
+    private fun at(i: Int, attr: Attr) = (a[i][attr.ordinal] * (1.0 + 0.05 * motivation[i])).coerceAtMost(1.0)
+
+    /** Applies team-talk reactions (player id → value) to the given team, including the bench. */
+    fun applyMotivation(team: Int, values: Map<Long, Double>) {
+        motivationById.putAll(values)
+        for (i in team * 11 until team * 11 + 11) playerAt[i]?.let { p -> values[p.id]?.let { motivation[i] = it } }
+    }
 
     // ------------------------------------------------------------------ frames
     /** Team-frame u (0 = own goal line, 105 = opponent goal line) → world x. */
@@ -781,8 +793,9 @@ class MatchEngine2D(val setup: MatchSetup) {
                 return
             }
             val inOwnBoxTackle = uOf(t, px[o]) > L - 16.5 && abs(py[o] - W / 2) < 20.16
+            val booked = (pm[playerAt[k]!!.id]?.yellow ?: 0) >= 1
             val pFoul = (0.09 + 0.16 * at(k, Attr.AGGRESSION) - 0.07 * at(k, Attr.TACKLING)).coerceIn(0.03, 0.35) *
-                (if (inOwnBoxTackle) 0.22 else 1.0)
+                (if (inOwnBoxTackle) 0.22 else 1.0) * (if (booked) 0.6 else 1.0)
             if (rng.chance(pFoul)) { foul(k, o); return }
             tackleCooldown[k] = 1.2 // beaten
         }
@@ -795,9 +808,10 @@ class MatchEngine2D(val setup: MatchSetup) {
         pm[fouler.id]?.let { it.rating -= 0.1 }
         events.add(MatchEvent(minute, EvType.FOUL, t, fouler.id))
         val lastMan = uOf(1 - t, px[victim]) > secondLastDefenderU(1 - t) - 1
-        val pYellow = 0.11 + 0.2 * at(k, Attr.AGGRESSION) + (if (lastMan) 0.3 else 0.0)
         val m = pm.getValue(fouler.id)
-        if (rng.chance(if (lastMan) 0.06 else 0.008)) sendOff(k, direct = true)
+        // Booked players are more careful; referees are more lenient with a second yellow.
+        val pYellow = (0.11 + 0.2 * at(k, Attr.AGGRESSION) + (if (lastMan) 0.15 else 0.0)) * (if (m.yellow >= 1) 0.45 else 1.0)
+        if (rng.chance(if (lastMan) 0.02 else 0.003)) sendOff(k, direct = true)
         else if (rng.chance(pYellow)) {
             m.yellow++; stats[t].yellows++
             m.rating -= 0.3

@@ -4,8 +4,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -38,7 +42,7 @@ fun PlayerScreen(vm: GameViewModel, id: Long) {
     val club = w.clubs[p.clubId]
     val own = p.clubId == w.manager.clubId && p.clubId >= 0
     var dialog by remember { mutableStateOf<String?>(null) }
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyVerticalGrid(GridCells.Adaptive(300.dp), Modifier.fillMaxSize().padding(6.dp)) {
         item {
             SectionCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -66,6 +70,17 @@ fun PlayerScreen(vm: GameViewModel, id: Long) {
             }
         }
         item {
+            SectionCard(vm.t("Kontrak & Musim Ini", "Contract & Season")) {
+                p.contract?.let { ct ->
+                    KeyValue(vm.t("Gaji / bulan", "Wage / month"), Money.format(ct.wage, vm.lang))
+                    KeyValue(vm.t("Berakhir", "Expires"), "30 Jun ${ct.endYear}")
+                    KeyValue(vm.t("Status", "Status"), ct.squadStatus.label(vm.lang))
+                }
+                KeyValue(vm.t("Main / Gol / Assist", "Apps / Goals / Assists"), "${p.season.apps} / ${p.season.goals} / ${p.season.assists}")
+                KeyValue(vm.t("Rating rata-rata", "Average rating"), if (p.season.apps > 0) "%.2f".format(p.season.avgRating) else "-")
+            }
+        }
+        item(span = { GridItemSpan(minOf(2, maxLineSpan)) }) {
             val groups = if (p.position == Position.GK) listOf(AttrGroup.GOALKEEPING, AttrGroup.MENTAL, AttrGroup.PHYSICAL)
             else listOf(AttrGroup.TECHNICAL, AttrGroup.MENTAL, AttrGroup.PHYSICAL)
             SectionCard(vm.t("Atribut", "Attributes")) {
@@ -75,17 +90,6 @@ fun PlayerScreen(vm: GameViewModel, id: Long) {
                         for (a in Attr.entries.filter { it.group == g }) AttrCell(a.label(vm.lang), c.attrRange(p, a))
                     }
                 }
-            }
-        }
-        item {
-            SectionCard(vm.t("Kontrak & Musim Ini", "Contract & Season")) {
-                p.contract?.let { ct ->
-                    KeyValue(vm.t("Gaji / bulan", "Wage / month"), Money.format(ct.wage, vm.lang))
-                    KeyValue(vm.t("Berakhir", "Expires"), "30 Jun ${ct.endYear}")
-                    KeyValue(vm.t("Status", "Status"), ct.squadStatus.label(vm.lang))
-                }
-                KeyValue(vm.t("Main / Gol / Assist", "Apps / Goals / Assists"), "${p.season.apps} / ${p.season.goals} / ${p.season.assists}")
-                KeyValue(vm.t("Rating rata-rata", "Average rating"), if (p.season.apps > 0) "%.2f".format(p.season.avgRating) else "-")
             }
         }
         if (p.history.isNotEmpty()) item {
@@ -100,6 +104,14 @@ fun PlayerScreen(vm: GameViewModel, id: Long) {
         item {
             Column(Modifier.padding(12.dp)) {
                 if (own) {
+                    KeyValue(vm.t("Kebahagiaan", "Happiness"), fm.engine.dynamics.Dynamics.happinessLabel(p.happiness, vm.lang), happinessColor(p.happiness))
+                    KeyValue(vm.t("Hubungan dengan Anda", "Relationship with you"), "${p.relationship}/100")
+                    for (f in fm.engine.dynamics.Dynamics.factors(w, p)) SmallText((if (f.value > 0) "▲ " else "▼ ") + f.label(vm.lang),
+                        if (f.value > 0) LocalFm.current.good else LocalFm.current.bad)
+                    Spacer(Modifier.height(6.dp))
+                    Button(onClick = { dialog = "talk" }, enabled = fm.engine.dynamics.Interactions.canTalk(w, p), modifier = Modifier.fillMaxWidth()) {
+                        Text(vm.t("Bicara dengan pemain", "Talk to player"))
+                    }
                     Button(onClick = { dialog = "renew" }, Modifier.fillMaxWidth()) { Text(vm.t("Tawarkan kontrak baru", "Offer new contract")) }
                     OutlinedButton(onClick = { vm.act { it.toggleTransferList(p.id) } }, Modifier.fillMaxWidth()) {
                         Text(if (p.transferListed) vm.t("Hapus dari daftar jual", "Remove from transfer list") else vm.t("Masukkan daftar jual", "Add to transfer list"))
@@ -118,6 +130,7 @@ fun PlayerScreen(vm: GameViewModel, id: Long) {
         }
     }
     when (dialog) {
+        "talk" -> InteractionDialog(vm, p) { dialog = null }
         "renew" -> MoneyDialog(vm, vm.t("Kontrak baru", "New contract"), Transfers.renewalDemand(w, p), showFee = false, onDismiss = { dialog = null }) { _, wage, years ->
             vm.act { cc -> if (!cc.renew(p.id, wage, years)) vm.toast = vm.t("Pemain menolak tawaran.", "The player rejected the offer.") }
             dialog = null
@@ -179,17 +192,19 @@ fun TacticsScreen(vm: GameViewModel) {
     var tactic by remember(vm.version) { mutableStateOf(club.tactic) }
     val sheet = remember(tactic, vm.version) { Lineups.pick(w, club, tactic) }
     var pickSlot by remember { mutableIntStateOf(-1) }
-    LazyColumn(Modifier.fillMaxSize()) {
-        item {
+    Row(Modifier.fillMaxSize()) {
+    Column(Modifier.weight(0.42f).fillMaxHeight()) {
+        run {
             Text(vm.t("Formasi", "Formation"), Modifier.padding(12.dp, 8.dp), style = MaterialTheme.typography.titleSmall)
             ChipRow(Formation.ALL.map { it.name }, Formation.ALL.indexOfFirst { it.name == tactic.formation.name }) {
                 tactic = tactic.copy(formation = Formation.ALL[it], lineup = emptyList())
             }
             SmallText("  " + vm.t("Keakraban taktik: ", "Tactical familiarity: ") + "${w.userTacticFamiliarity}%", MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        item {
+        run {
             // Tactical pitch: tap a slot to choose a player.
-            BoxWithConstraints(Modifier.fillMaxWidth().padding(12.dp).aspectRatio(0.72f)) {
+            BoxWithConstraints(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.Center) {
+            BoxWithConstraints(Modifier.aspectRatio(0.72f, matchHeightConstraintsFirst = maxWidth / maxHeight > 0.72f)) {
                 val wPx = maxWidth; val hPx = maxHeight
                 Canvas(Modifier.fillMaxSize()) {
                     drawRect(Pal.pitch)
@@ -206,14 +221,17 @@ fun TacticsScreen(vm: GameViewModel) {
                     val y = hPx * (1f - slot.fx.toFloat() * 1.05f).coerceIn(0.03f, 0.95f) - 20.dp
                     Column(Modifier.offset(x, y).width(68.dp).clickable { pickSlot = i }, horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(Modifier.size(26.dp).clip(CircleShape).background(Color(club.primaryColor)), contentAlignment = Alignment.Center) {
-                            Text(slot.position.label(vm.lang), fontSize = 8.sp, color = Color(club.secondaryColor), fontWeight = FontWeight.Bold)
+                            Text(slot.position.label(vm.lang), fontSize = 8.sp, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                         Text(p?.lastName ?: "-", fontSize = 10.sp, color = Color.White, maxLines = 1, fontWeight = FontWeight.SemiBold)
-                        Text(slot.role.label(vm.lang), fontSize = 8.sp, color = Color.White.copy(alpha = 0.8f), maxLines = 1)
+                        if (!LocalCompact.current) Text(slot.role.label(vm.lang), fontSize = 8.sp, color = Color.White.copy(alpha = 0.8f), maxLines = 1)
                     }
                 }
             }
+            }
         }
+    }
+    LazyColumn(Modifier.weight(0.58f).fillMaxHeight()) {
         item {
             SectionCard(vm.t("Instruksi Tim", "Team Instructions")) {
                 Text(vm.t("Mentalitas", "Mentality"), style = MaterialTheme.typography.labelLarge)
@@ -241,6 +259,7 @@ fun TacticsScreen(vm: GameViewModel) {
                 Spacer(Modifier.height(60.dp))
             }
         }
+    }
     }
     if (pickSlot >= 0) {
         val slot = tactic.formation.slots[pickSlot]
@@ -275,7 +294,7 @@ fun TrainingScreen(vm: GameViewModel) {
     vm.version // recompose when the world changes
     val w = vm.world ?: return
     val club = w.userClub ?: return
-    LazyColumn {
+    LazyVerticalGrid(GridCells.Adaptive(380.dp), Modifier.fillMaxSize().padding(6.dp)) {
         item {
             SectionCard(vm.t("Fokus Latihan Tim", "Team Training Focus")) {
                 for (f in TrainingFocus.entries) Row(Modifier.fillMaxWidth().clickable { vm.act { it.setTraining(f, club.trainingIntensity) } }, verticalAlignment = Alignment.CenterVertically) {

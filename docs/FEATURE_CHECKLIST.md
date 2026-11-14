@@ -48,10 +48,29 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ✅ Staff ageing & replacement; unemployed manager pool
 - ✅ Population control; 30-season stress test passes
 
+## Match day (management-sim style)
+- ✅ Pre-match press conference (context-aware questions; answers affect morale, media hype, board)
+- ✅ Briefing: opposition analysis (form, position, expected formation & mentality, key players, predicted XI), win/draw/loss prediction, assistant advice, our line-up with condition & morale
+- ✅ Team talks before kick-off, at half-time and at full-time; per-player reactions by personality & situation; assistant suggestion; motivation affects the 2D engine
+- ✅ Live match: side panel with live ratings & condition, commentary / stats / assistant / tactics tabs, subs dialog, speeds, pause
+- ✅ Live assistant advice (possession, shots conceded, chance quality, chasing/protecting, fatigue, bookings, poor performers)
+- ✅ Post-match report: scorers, cards, player of the match, stat bars, ratings for both teams
+- ✅ Post-match press conference
+
+## Squad dynamics & interaction
+- ✅ Influence hierarchy (team leaders, highly influential, influential, others)
+- ✅ Happiness with explained factors (playing time vs status, contract, wage, relationship, form, ambition, broken/kept promises, injuries)
+- ✅ Dressing-room atmosphere, cohesion, social groups, media hype
+- ✅ Private conversations (praise/criticise form or training, playing time, future, discipline, transfer request) with personality-dependent outcomes and cooldown
+- ✅ Promises (playing time, contract, signing, sale) tracked, kept or broken with dressing-room consequences
+- ✅ Unhappy players complain and eventually hand in transfer requests
+
 ## Android
-- ✅ Compose UI: start, new career, home, squad, player, tactics, training, transfers, scouting, competitions, club, finances, inbox, profile, settings, live match
-- ✅ Dark/light theme, Indonesian/English, portrait
-- ✅ Robolectric UI smoke test of the full flow
+- ✅ Whole app in landscape; responsive shell: labelled sidebar on tablets, icon rail on phones; persistent top bar with Continue / Match Day
+- ✅ Dense tables (up to 12 columns on wide screens), multi-column dashboards, compact typography on phones
+- ✅ Compose UI: start, new career, home, inbox, squad, dynamics, player, tactics, training, fixtures/competitions, scouting, transfers, club, finances, manager, settings, match-day flow
+- ✅ Four selectable themes (Charcoal, Midnight, Light, High Contrast), Indonesian/English (remembered)
+- ✅ Robolectric UI tests in landscape (phone 891×411dp and tablet 1280×800dp) with screenshots
 - 🟡 Tested only on JVM (Robolectric); not yet on a physical device
 - ⬜ Release signing, store listing
 

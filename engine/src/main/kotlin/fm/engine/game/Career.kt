@@ -115,6 +115,7 @@ class Career(val world: World) {
             Development.weekly(world)
             Development.trainingInjuries(world)
             scoutingWeek()
+            fm.engine.dynamics.Dynamics.weekly(world)
             if (world.manager.clubId >= 0) world.userTacticFamiliarity = (world.userTacticFamiliarity + 1).coerceAtMost(100)
         }
         // 5. Market

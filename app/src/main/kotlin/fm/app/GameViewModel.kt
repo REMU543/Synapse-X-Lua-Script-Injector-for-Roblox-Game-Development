@@ -35,6 +35,8 @@ sealed class Screen {
     data object Profile : Screen()
     data object Settings : Screen()
     data object Match : Screen()
+    data object Dynamics : Screen()
+    data object MatchDayFlow : Screen()
     data class PlayerDetail(val id: Long) : Screen()
     data class ClubDetail(val id: Long) : Screen()
 }
@@ -54,13 +56,72 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     var busy by mutableStateOf(false); private set
     var version by mutableIntStateOf(0); private set
     var toast: String? by mutableStateOf(null)
-    var dark by mutableStateOf(true)
+    private val prefs = app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+    var theme by mutableStateOf(runCatching { fm.app.ui.ThemeChoice.valueOf(prefs.getString("theme", "ARANG")!!) }.getOrDefault(fm.app.ui.ThemeChoice.ARANG))
+        private set
+    fun setThemeChoice(t: fm.app.ui.ThemeChoice) { theme = t; prefs.edit().putString("theme", t.name).apply() }
+
+    // ---------------------------------------------------------------- match day flow
+    enum class MdStage { PRESS_PRE, PREVIEW, TALK_PRE, LIVE, REPORT, TALK_FULL, PRESS_POST }
+    var matchDay: fm.engine.game.MatchDay? by mutableStateOf(null); private set
+    var mdStage by mutableStateOf(MdStage.PREVIEW)
+    var talkResult: List<fm.engine.dynamics.TeamTalk.Reaction> by mutableStateOf(emptyList())
+    var pressReaction: String? by mutableStateOf(null)
+
+    fun beginMatchDay() {
+        val c = career ?: return
+        val f = c.userFixtureToday() ?: return
+        val md = fm.engine.game.MatchDay(c, f)
+        matchDay = md
+        md.pressPre()
+        talkResult = emptyList(); pressReaction = null
+        mdStage = MdStage.PRESS_PRE
+        navigate(Screen.MatchDayFlow)
+    }
+
+    fun answerPress(q: PressQuestion, a: fm.engine.dynamics.Press.Answer) {
+        val w = world ?: return
+        pressReaction = fm.core.I18n.t(lang, fm.engine.dynamics.Press.answer(w, q, a))
+        version++
+    }
+
+    fun skipPress() { world?.pendingPress = null; pressReaction = null; mdStage = if (mdStage == MdStage.PRESS_PRE) MdStage.PREVIEW else MdStage.PRESS_POST; version++ }
+
+    fun teamTalk(stage: fm.engine.dynamics.TeamTalk.Stage, tone: fm.engine.dynamics.TeamTalk.Tone) {
+        val md = matchDay ?: return
+        talkResult = md.talk(stage, tone)
+        version++
+    }
+
+    fun kickOff() {
+        val md = matchDay ?: return
+        engine = md.start()
+        talkResult = emptyList()
+        mdStage = MdStage.LIVE
+    }
+
+    fun finishLiveMatch() = work {
+        val md = matchDay ?: return@work
+        md.finish()
+        engine = null
+        talkResult = emptyList()
+        mdStage = MdStage.REPORT
+    }
+
+    fun endMatchDay() = work {
+        val c = career ?: return@work
+        c.world.pendingPress = null
+        matchDay = null
+        c.advanceDay()
+        autosave()
+        withContext(Dispatchers.Main) { navigate(Screen.Home, root = true) }
+    }
     var slot by mutableStateOf("karier1")
     var engine: MatchEngine2D? by mutableStateOf(null); private set
 
     val world: World? get() = career?.world
     val lang: Lang get() = career?.world?.settings?.lang ?: uiLang
-    var uiLang by mutableStateOf(Lang.ID)
+    var uiLang by mutableStateOf(runCatching { Lang.valueOf(prefs.getString("lang", "ID")!!) }.getOrDefault(Lang.ID))
 
     fun t(id: String, en: String) = if (lang == Lang.ID) id else en
 
@@ -158,5 +219,5 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Runs a world-mutating user action (tactics, transfers, ...) safely. */
     fun act(block: (Career) -> Unit) = work { career?.let(block) }
 
-    fun setLang(l: Lang) { uiLang = l; career?.world?.settings?.lang = l; version++ }
+    fun setLang(l: Lang) { uiLang = l; prefs.edit().putString("lang", l.name).apply(); career?.world?.settings?.lang = l; version++ }
 }
