@@ -107,6 +107,12 @@ object I18n {
         "adv_live_tired" to "{0} mulai kelelahan.",
         "adv_live_booked" to "{0} sudah mendapat kartu kuning; risiko kartu merah.",
         "adv_live_poor_player" to "{0} bermain di bawah standar. Pertimbangkan pergantian.",
+        "retrain_done" to "{0} kini nyaman bermain sebagai {1}.",
+        "staff_hired" to "{0} bergabung sebagai {1}.",
+        "staff_full" to "Kuota staf untuk peran ini sudah penuh.",
+        "staff_refused" to "Kandidat menolak: reputasi klub terlalu rendah.",
+        "staff_no_club" to "Anda belum memiliki klub.",
+        "staff_unknown" to "Staf tidak tersedia.",
     )
     private val en = mapOf(
         "welcome" to "Welcome to {0}! The board expects a finish around position {1}. Good luck, {2}.",
@@ -210,6 +216,12 @@ object I18n {
         "adv_live_tired" to "{0} is tiring.",
         "adv_live_booked" to "{0} is on a yellow card; risk of a red.",
         "adv_live_poor_player" to "{0} is underperforming. Consider a substitution.",
+        "retrain_done" to "{0} is now comfortable playing as {1}.",
+        "staff_hired" to "{0} joins as {1}.",
+        "staff_full" to "The quota for this role is full.",
+        "staff_refused" to "The candidate refused: club reputation too low.",
+        "staff_no_club" to "You have no club.",
+        "staff_unknown" to "Staff member not available.",
     )
 
     fun t(lang: Lang, key: String, args: List<String> = emptyList()): String {

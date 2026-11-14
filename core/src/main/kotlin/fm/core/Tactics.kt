@@ -2,6 +2,28 @@ package fm.core
 
 import kotlinx.serialization.Serializable
 
+enum class Duty(val id: String, val en: String, val short: String) {
+    DEFEND("Bertahan", "Defend", "B"),
+    SUPPORT("Dukung", "Support", "D"),
+    ATTACK("Serang", "Attack", "S");
+    fun label(lang: Lang) = if (lang == Lang.ID) id else en
+}
+
+/** Individual instructions for the player in a slot (each changes a term in the match engine). */
+@Serializable
+data class PlayerInstructions(
+    val shootMore: Boolean = false,
+    val dribbleMore: Boolean = false,
+    val crossMore: Boolean = false,
+    val closeDownMore: Boolean = false,
+    val stayWider: Boolean = false,
+    val holdPosition: Boolean = false,
+    val getForward: Boolean = false,
+    val tackleHarder: Boolean = false,
+) {
+    val count get() = listOf(shootMore, dribbleMore, crossMore, closeDownMore, stayWider, holdPosition, getForward, tackleHarder).count { it }
+}
+
 /** One of the 11 positions in a formation, in team-relative normalised coordinates. */
 @Serializable
 data class Slot(
@@ -11,7 +33,18 @@ data class Slot(
     /** 0 = left touchline, 1 = right touchline (from the team's attacking view). */
     val fy: Double,
     val role: Role,
+    val duty: Duty = Duty.SUPPORT,
+    val instructions: PlayerInstructions = PlayerInstructions(),
 )
+
+enum class CornerRoutine(val id: String, val en: String) {
+    MIXED("Campuran", "Mixed"),
+    NEAR_POST("Tiang dekat", "Near post"),
+    FAR_POST("Tiang jauh", "Far post"),
+    PENALTY_SPOT("Titik penalti", "Penalty spot"),
+    EDGE_OF_AREA("Tepi kotak (tembakan)", "Edge of area (shot)");
+    fun label(lang: Lang) = if (lang == Lang.ID) id else en
+}
 
 enum class Role(val id: String, val en: String) {
     GOALKEEPER("Penjaga Gawang", "Goalkeeper"),
@@ -33,9 +66,47 @@ enum class Role(val id: String, val en: String) {
     TARGET_FORWARD("Penyerang Target", "Target Forward"),
     POACHER("Pemburu Gol", "Poacher"),
     FALSE_NINE("False Nine", "False Nine"),
-    COMPLETE_FORWARD("Penyerang Lengkap", "Complete Forward");
+    COMPLETE_FORWARD("Penyerang Lengkap", "Complete Forward"),
+    LIBERO("Libero", "Libero"),
+    NO_NONSENSE_CB("Bek Tanpa Basa-basi", "No-Nonsense Centre-Back"),
+    COMPLETE_WING_BACK("Bek Sayap Lengkap", "Complete Wing-Back"),
+    HALF_BACK("Gelandang Bertahan Mundur", "Half-Back"),
+    BALL_WINNER("Perebut Bola", "Ball-Winning Midfielder"),
+    MEZZALA("Mezzala", "Mezzala"),
+    ROAMING_PLAYMAKER("Playmaker Penjelajah", "Roaming Playmaker"),
+    SHADOW_STRIKER("Penyerang Bayangan", "Shadow Striker"),
+    INVERTED_WINGER("Pemain Sayap Terbalik", "Inverted Winger"),
+    WIDE_TARGET_MAN("Target Man Sayap", "Wide Target Forward"),
+    PRESSING_FORWARD("Penyerang Penekan", "Pressing Forward"),
+    DEEP_LYING_FORWARD("Penyerang Turun", "Deep-Lying Forward");
 
     fun label(lang: Lang) = if (lang == Lang.ID) id else en
+
+    companion object {
+        /** Roles available for each position (the role menu of the tactics screen). */
+        fun forPosition(p: Position): List<Role> = when (p) {
+            Position.GK -> listOf(GOALKEEPER, SWEEPER_KEEPER)
+            Position.DC -> listOf(CENTRE_BACK, BALL_PLAYING_DEFENDER, NO_NONSENSE_CB, LIBERO)
+            Position.DR, Position.DL -> listOf(FULL_BACK, WING_BACK, INVERTED_FULL_BACK, COMPLETE_WING_BACK)
+            Position.DM -> listOf(ANCHOR, HALF_BACK, DEEP_PLAYMAKER, BALL_WINNER)
+            Position.MC -> listOf(CENTRAL_MIDFIELDER, BOX_TO_BOX, DEEP_PLAYMAKER, BALL_WINNER, MEZZALA, ROAMING_PLAYMAKER, ADVANCED_PLAYMAKER)
+            Position.MR, Position.ML -> listOf(WIDE_MIDFIELDER, WINGER, INVERTED_WINGER, WING_BACK)
+            Position.AMC -> listOf(ATTACKING_MIDFIELDER, ADVANCED_PLAYMAKER, SHADOW_STRIKER)
+            Position.AMR, Position.AML -> listOf(WINGER, INVERTED_WINGER, INSIDE_FORWARD, WIDE_TARGET_MAN)
+            Position.ST -> listOf(COMPLETE_FORWARD, POACHER, TARGET_FORWARD, PRESSING_FORWARD, FALSE_NINE, DEEP_LYING_FORWARD)
+        }
+
+        /** Duties a role allows (e.g. a poacher always attacks, an anchor always defends). */
+        fun duties(r: Role): List<Duty> = when (r) {
+            GOALKEEPER, ANCHOR, HALF_BACK, NO_NONSENSE_CB, CENTRE_BACK -> listOf(Duty.DEFEND)
+            BALL_PLAYING_DEFENDER, LIBERO, SWEEPER_KEEPER -> listOf(Duty.DEFEND, Duty.SUPPORT)
+            POACHER, SHADOW_STRIKER -> listOf(Duty.ATTACK)
+            INSIDE_FORWARD -> listOf(Duty.ATTACK, Duty.SUPPORT)
+            BOX_TO_BOX, ROAMING_PLAYMAKER -> listOf(Duty.SUPPORT)
+            TARGET_FORWARD, PRESSING_FORWARD, COMPLETE_FORWARD, WIDE_TARGET_MAN -> listOf(Duty.SUPPORT, Duty.ATTACK)
+            else -> listOf(Duty.DEFEND, Duty.SUPPORT, Duty.ATTACK)
+        }
+    }
 }
 
 @Serializable
@@ -154,4 +225,27 @@ data class Tactic(
     val penaltyTakerId: Long = -1,
     val freeKickTakerId: Long = -1,
     val cornerTakerId: Long = -1,
-)
+    /** Per-slot overrides (same order as formation slots); empty = formation defaults. */
+    val slotRoles: List<Role> = emptyList(),
+    val slotDuties: List<Duty> = emptyList(),
+    val slotInstructions: List<PlayerInstructions> = emptyList(),
+    val cornerRoutine: CornerRoutine = CornerRoutine.MIXED,
+) {
+    /** The formation's slots with this tactic's roles, duties and player instructions applied. */
+    fun effectiveSlots(): List<Slot> = formation.slots.mapIndexed { i, s ->
+        val role = slotRoles.getOrNull(i)?.takeIf { it in Role.forPosition(s.position) } ?: s.role
+        val duty = slotDuties.getOrNull(i)?.takeIf { it in Role.duties(role) } ?: Role.duties(role).let { if (s.duty in it) s.duty else it.first() }
+        s.copy(role = role, duty = duty, instructions = slotInstructions.getOrNull(i) ?: s.instructions)
+    }
+
+    fun withSlot(i: Int, role: Role? = null, duty: Duty? = null, instr: PlayerInstructions? = null): Tactic {
+        val eff = effectiveSlots()
+        val roles = eff.map { it.role }.toMutableList()
+        val duties = eff.map { it.duty }.toMutableList()
+        val ins = eff.map { it.instructions }.toMutableList()
+        if (role != null && role != roles[i]) { roles[i] = role; duties[i] = Role.duties(role).first() }
+        if (duty != null && duty in Role.duties(roles[i])) duties[i] = duty
+        if (instr != null) ins[i] = instr
+        return copy(slotRoles = roles, slotDuties = duties, slotInstructions = ins)
+    }
+}

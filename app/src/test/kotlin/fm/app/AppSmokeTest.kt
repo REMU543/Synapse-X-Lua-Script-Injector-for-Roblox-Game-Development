@@ -89,6 +89,29 @@ class AppSmokeTest {
             Screen.Competitions to "08_competitions", Screen.Scouting to "09_scouting", Screen.Transfers to "10_transfers", Screen.Club to "11_club",
             Screen.Finances to "12_finances", Screen.Inbox to "13_inbox", Screen.Profile to "14_profile", Screen.Settings to "15_settings")
         for ((s, n) in screens) go(vm, s, n)
+        // Tactics: slot dialog (role & duty, instructions) and set pieces
+        go(vm, Screen.Tactics, "06a_tactics")
+        rule.onNodeWithText("Peran Pemain").performClick(); rule.waitForIdle()
+        shot("06b_tactics_roles")
+        rule.onAllNodes(hasText("—", substring = true))[1].performClick(); rule.waitForIdle()
+        rule.onNodeWithText("Peran & Tugas").performClick(); rule.waitForIdle()
+        shot("06c_slot_role")
+        rule.onNodeWithText("Instruksi").performClick(); rule.waitForIdle()
+        rule.onNodeWithText("Lebih sering menembak").performClick(); rule.waitForIdle()
+        rule.onNodeWithText("OK").performClick(); rule.waitForIdle()
+        rule.onNodeWithText("Bola Mati").performClick(); rule.waitForIdle()
+        shot("06d_set_pieces")
+        rule.onNodeWithText("Simpan").performClick(); waitIdle(vm)
+        assertTrue("player instruction saved", vm.world!!.userClub!!.tactic.effectiveSlots().any { it.instructions.shootMore })
+        // Training schedule & staff market
+        go(vm, Screen.Training, "07a_training")
+        go(vm, Screen.Staff, "11a_staff")
+        rule.onNodeWithText("Bursa Staf").performClick(); rule.waitForIdle()
+        shot("11b_staff_market")
+        val before = vm.world!!.userClub!!.staffIds.size
+        rule.onAllNodesWithText("Rekrut")[0].performClick(); waitIdle(vm)
+        assertTrue("staff hired or refused with a message", vm.world!!.userClub!!.staffIds.size > before || vm.toast != null)
+        vm.toast = null
         val pid = vm.world!!.squad(club).maxBy { it.ca }.id
         go(vm, Screen.PlayerDetail(pid), "16_player")
         // Private chat from the player profile

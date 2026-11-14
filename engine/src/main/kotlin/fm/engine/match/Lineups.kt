@@ -11,7 +11,7 @@ object Lineups {
     fun pick(world: World, club: Club, tactic: Tactic = club.tactic, maxSubs: Int = 5, familiarity: Double = 0.8): TeamSheet {
         val squad = world.squad(club.id).filter { it.available }
         val used = HashSet<Long>()
-        val slots = tactic.formation.slots
+        val slots = tactic.effectiveSlots()
         val assigned = arrayOfNulls<Player>(11)
         // 1. Honour a user-chosen lineup where those players are available.
         if (tactic.lineup.size == 11) {
@@ -37,6 +37,7 @@ object Lineups {
         rest.firstOrNull { it.position == Position.GK && it !in bench }?.let { if (bench.size < 9) bench.add(it) }
         for (p in rest) if (bench.size < 9 && p !in bench) bench.add(p)
         return TeamSheet(club.id, club.name, club.primaryColor, club.secondaryColor, starters, bench,
-            tactic.instructions, tactic.formation, maxSubs, familiarity)
+            tactic.instructions, tactic.formation, maxSubs, familiarity,
+            tactic.penaltyTakerId, tactic.freeKickTakerId, tactic.cornerTakerId, tactic.cornerRoutine, tactic.captainId)
     }
 }

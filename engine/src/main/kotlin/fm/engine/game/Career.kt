@@ -116,7 +116,11 @@ class Career(val world: World) {
             Development.trainingInjuries(world)
             scoutingWeek()
             fm.engine.dynamics.Dynamics.weekly(world)
-            if (world.manager.clubId >= 0) world.userTacticFamiliarity = (world.userTacticFamiliarity + 1).coerceAtMost(100)
+            if (world.manager.clubId >= 0) {
+                val plan = Development.plan(world.userClub)
+                val gain = 1 + plan.count { it == Session.TACTICAL } + plan.count { it == Session.MATCH_PREP }
+                world.userTacticFamiliarity = (world.userTacticFamiliarity + gain).coerceAtMost(100)
+            }
         }
         // 5. Market
         if (Transfers.windowOpen(world)) Transfers.aiDay(world)
@@ -459,6 +463,46 @@ class Career(val world: World) {
     fun offer(playerId: Long, fee: Long, wage: Long, years: Int) = Transfers.userOffer(world, playerId, fee, wage, years)
 
     fun renew(playerId: Long, wage: Long, years: Int) = Transfers.userRenew(world, playerId, wage, years)
+
+    // ------------------------------------------------------------------ staff
+
+    fun staffMarket(role: StaffRole?): List<Staff> {
+        Development.ensureStaffPool(world)
+        return world.staff.values.filter { it.clubId < 0 && it.role != StaffRole.MANAGER && (role == null || it.role == role) }
+            .sortedByDescending { it.quality() }
+    }
+
+    fun maxStaff(role: StaffRole) = when (role) { StaffRole.COACH -> 4; StaffRole.SCOUT -> 3; StaffRole.PHYSIO, StaffRole.ASSISTANT -> 1; else -> 2 }
+
+    /** Hire from the staff market. Returns a message key (null = success). */
+    fun hireStaff(staffId: Long): String? {
+        val club = world.userClub ?: return "staff_no_club"
+        val s = world.staff[staffId] ?: return "staff_unknown"
+        if (s.clubId >= 0) return "staff_unknown"
+        val have = club.staffIds.count { world.staff[it]?.role == s.role }
+        if (have >= maxStaff(s.role)) return "staff_full"
+        if (s.reputation > club.reputation + 20) return "staff_refused"
+        val wage = WorldGenerator.staffWage(world.nation(club.nationId), s.role, s.quality())
+        s.clubId = club.id
+        s.contract = Contract(club.id, world.today, world.season + 2, wage)
+        club.staffIds.add(s.id)
+        world.inbox.add(InboxMessage(world.newId(), world.today, MsgType.NEWS, "staff_hired", listOf(s.name, s.role.label(lang))))
+        return null
+    }
+
+    /** Dismiss a staff member, paying compensation for the rest of the contract (max 12 months). */
+    fun fireStaff(staffId: Long): Boolean {
+        val club = world.userClub ?: return false
+        val s = world.staff[staffId] ?: return false
+        if (s.clubId != club.id) return false
+        val months = (((s.contract?.endYear ?: world.season) - world.season) * 12).coerceIn(1, 12)
+        Finance.expense(club, Finance.STAFF, (s.contract?.wage ?: 0) * months)
+        club.staffIds.remove(s.id)
+        s.clubId = -1; s.contract = null
+        return true
+    }
+
+    fun staffWageFor(s: Staff): Long = WorldGenerator.staffWage(world.nation(world.userClub?.nationId ?: 1), s.role, s.quality())
 
     fun leagueTable(compId: Int): List<TableRow> = world.compSeasons[compId]?.let { CompetitionEngine.sortedTable(world, it) } ?: emptyList()
 

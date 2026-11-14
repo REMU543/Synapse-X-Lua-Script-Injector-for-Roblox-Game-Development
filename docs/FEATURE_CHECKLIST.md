@@ -18,14 +18,20 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 
 ## Management
 - ✅ Squad screen (sortable), player profile (attributes, contract, history), squad statuses
-- ✅ Tactics: 6 formations, roles, mentality, 13 team instructions + offside trap, custom lineup, familiarity
-- ✅ Training focus & intensity, coaching quality, facilities
+- ✅ Tactics: 6 formations, 13 team instructions grouped by phase (in possession / transition / out of possession) + offside trap, custom lineup, familiarity
+- ✅ 36 player roles with position-specific role menus and duties (Defend / Support / Attack) validated per role
+- ✅ Role suitability stars per player (key attributes per role), colour ring on the tactics pitch
+- ✅ 8 individual player instructions (shoot more, dribble more, cross more, close down more, stay wider, hold position, get forward, tackle harder) — all used by the 2D engine
+- ✅ Set pieces: captain, penalty / free-kick / corner takers, corner routine (near post, far post, penalty spot, edge of area, mixed)
+- ✅ Weekly training schedule (9 session types per day) with load, condition and injury effects; quick presets
+- ✅ Individual training: attribute focus and position retraining (learnt after weeks, depending on adaptability)
+- ✅ Training focus & intensity, coaching quality, facilities; tactical sessions raise tactical familiarity
 - ✅ Transfers: bids, counters, wage demands, agent fees, free agents, release, transfer list, AI bids for listed players
 - 🟡 Loans (AI loans of young players; no user loan UI yet)
 - 🟡 Release clauses / sell-on (data model; release clause honoured in AI bids, no UI to set them)
 - ✅ Contracts: renewals (AI and user), expiry, youth contracts
 - ✅ Finances: ledger by category, monthly cycle, budgets, sustainability rule, prize money, owner rescue
-- 🟡 Staff: generated with attributes/contracts and affect training/scouting/medical; no hire/fire UI yet
+- ✅ Staff: club staff table, staff market by role (always stocked), hire with quotas and reputation check, dismiss with compensation
 
 ## Match engine
 - ✅ 2D real-time engine: 22 agents, ball physics with height, passing/shooting/dribbling/tackling/interceptions, crosses & headers, goalkeeping, fouls, cards, injuries, offside, corners, throw-ins, free kicks, penalties, extra time, shoot-outs

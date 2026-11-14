@@ -36,6 +36,7 @@ sealed class Screen {
     data object Settings : Screen()
     data object Match : Screen()
     data object Dynamics : Screen()
+    data object Staff : Screen()
     data object MatchDayFlow : Screen()
     data class PlayerDetail(val id: Long) : Screen()
     data class ClubDetail(val id: Long) : Screen()

@@ -112,6 +112,61 @@ object Ability {
     }
 }
 
+/** How well a player suits a role: key attributes of the role plus position ability. */
+object RoleFit {
+    private val A = Attr.entries.associateBy { it.name }
+    private fun k(vararg n: Attr) = n.toList()
+    val keys: Map<Role, List<Attr>> = mapOf(
+        Role.GOALKEEPER to k(Attr.HANDLING, Attr.REFLEXES, Attr.ONE_ON_ONES, Attr.POSITIONING, Attr.AERIAL_REACH),
+        Role.SWEEPER_KEEPER to k(Attr.RUSHING_OUT, Attr.ONE_ON_ONES, Attr.KICKING, Attr.PASSING, Attr.ANTICIPATION, Attr.REFLEXES),
+        Role.CENTRE_BACK to k(Attr.MARKING, Attr.TACKLING, Attr.HEADING, Attr.POSITIONING, Attr.STRENGTH),
+        Role.BALL_PLAYING_DEFENDER to k(Attr.PASSING, Attr.COMPOSURE, Attr.VISION, Attr.MARKING, Attr.TACKLING),
+        Role.NO_NONSENSE_CB to k(Attr.HEADING, Attr.MARKING, Attr.STRENGTH, Attr.BRAVERY, Attr.TACKLING),
+        Role.LIBERO to k(Attr.PASSING, Attr.DRIBBLING, Attr.ANTICIPATION, Attr.COMPOSURE, Attr.TACKLING),
+        Role.FULL_BACK to k(Attr.TACKLING, Attr.MARKING, Attr.POSITIONING, Attr.STAMINA, Attr.CROSSING),
+        Role.WING_BACK to k(Attr.CROSSING, Attr.STAMINA, Attr.PACE, Attr.WORK_RATE, Attr.DRIBBLING),
+        Role.INVERTED_FULL_BACK to k(Attr.PASSING, Attr.DECISIONS, Attr.POSITIONING, Attr.TACKLING, Attr.COMPOSURE),
+        Role.COMPLETE_WING_BACK to k(Attr.CROSSING, Attr.DRIBBLING, Attr.STAMINA, Attr.PACE, Attr.FLAIR),
+        Role.ANCHOR to k(Attr.POSITIONING, Attr.TACKLING, Attr.MARKING, Attr.CONCENTRATION, Attr.DECISIONS),
+        Role.HALF_BACK to k(Attr.POSITIONING, Attr.PASSING, Attr.TACKLING, Attr.DECISIONS, Attr.COMPOSURE),
+        Role.DEEP_PLAYMAKER to k(Attr.PASSING, Attr.VISION, Attr.COMPOSURE, Attr.DECISIONS, Attr.TECHNIQUE),
+        Role.BALL_WINNER to k(Attr.TACKLING, Attr.AGGRESSION, Attr.WORK_RATE, Attr.STAMINA, Attr.ANTICIPATION),
+        Role.BOX_TO_BOX to k(Attr.STAMINA, Attr.WORK_RATE, Attr.PASSING, Attr.TACKLING, Attr.OFF_THE_BALL),
+        Role.CENTRAL_MIDFIELDER to k(Attr.PASSING, Attr.DECISIONS, Attr.TEAMWORK, Attr.FIRST_TOUCH, Attr.WORK_RATE),
+        Role.MEZZALA to k(Attr.DRIBBLING, Attr.PASSING, Attr.OFF_THE_BALL, Attr.TECHNIQUE, Attr.VISION),
+        Role.ROAMING_PLAYMAKER to k(Attr.PASSING, Attr.VISION, Attr.STAMINA, Attr.DRIBBLING, Attr.DECISIONS),
+        Role.ADVANCED_PLAYMAKER to k(Attr.VISION, Attr.PASSING, Attr.TECHNIQUE, Attr.FIRST_TOUCH, Attr.FLAIR),
+        Role.WIDE_MIDFIELDER to k(Attr.CROSSING, Attr.WORK_RATE, Attr.PASSING, Attr.STAMINA, Attr.TEAMWORK),
+        Role.WINGER to k(Attr.PACE, Attr.ACCELERATION, Attr.DRIBBLING, Attr.CROSSING, Attr.AGILITY),
+        Role.INVERTED_WINGER to k(Attr.DRIBBLING, Attr.PASSING, Attr.LONG_SHOTS, Attr.TECHNIQUE, Attr.FLAIR),
+        Role.INSIDE_FORWARD to k(Attr.DRIBBLING, Attr.FINISHING, Attr.PACE, Attr.OFF_THE_BALL, Attr.FIRST_TOUCH),
+        Role.WIDE_TARGET_MAN to k(Attr.HEADING, Attr.STRENGTH, Attr.JUMPING, Attr.BRAVERY, Attr.FIRST_TOUCH),
+        Role.ATTACKING_MIDFIELDER to k(Attr.PASSING, Attr.LONG_SHOTS, Attr.OFF_THE_BALL, Attr.TECHNIQUE, Attr.FIRST_TOUCH),
+        Role.SHADOW_STRIKER to k(Attr.OFF_THE_BALL, Attr.FINISHING, Attr.ANTICIPATION, Attr.COMPOSURE, Attr.DRIBBLING),
+        Role.TARGET_FORWARD to k(Attr.HEADING, Attr.STRENGTH, Attr.JUMPING, Attr.BRAVERY, Attr.FIRST_TOUCH),
+        Role.POACHER to k(Attr.FINISHING, Attr.OFF_THE_BALL, Attr.ANTICIPATION, Attr.COMPOSURE, Attr.ACCELERATION),
+        Role.COMPLETE_FORWARD to k(Attr.FINISHING, Attr.PASSING, Attr.DRIBBLING, Attr.HEADING, Attr.TECHNIQUE),
+        Role.PRESSING_FORWARD to k(Attr.WORK_RATE, Attr.STAMINA, Attr.AGGRESSION, Attr.ANTICIPATION, Attr.FINISHING),
+        Role.FALSE_NINE to k(Attr.PASSING, Attr.VISION, Attr.DRIBBLING, Attr.TECHNIQUE, Attr.OFF_THE_BALL),
+        Role.DEEP_LYING_FORWARD to k(Attr.PASSING, Attr.FIRST_TOUCH, Attr.VISION, Attr.TEAMWORK, Attr.FINISHING),
+    )
+
+    /** Suitability on the CA scale (1–200). */
+    fun rating(p: Player, role: Role, pos: Position): Double {
+        val key = keys[role] ?: return Ability.effective(p, pos)
+        val keyAvg = key.map { p.attr(it) }.average()
+        val fam = Ability.familiarity(p, pos)
+        return (0.6 * Ability.caAt(p.attrs, pos) + 0.4 * (keyAvg - 1.0) / 19.0 * 200.0) * fam
+    }
+
+    /** 0.5–5 stars relative to the player's own best role in that position. */
+    fun stars(p: Player, role: Role, pos: Position): Double {
+        val best = Role.forPosition(pos).maxOf { rating(p, it, pos) }.coerceAtLeast(1.0)
+        val r = rating(p, role, pos) / best
+        return (5.0 * r - (1 - r) * 10).coerceIn(0.5, 5.0).let { Math.round(it * 2) / 2.0 }
+    }
+}
+
 /** Aggregate team strength used by the reduced and light match models. */
 data class TeamStrength(val attack: Double, val midfield: Double, val defense: Double, val gk: Double) {
     val overall get() = (attack + midfield + defense + gk) / 4.0

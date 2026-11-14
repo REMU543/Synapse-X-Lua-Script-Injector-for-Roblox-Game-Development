@@ -33,3 +33,13 @@
 - Bugs fixed: red cards 0.5 → 0.15 per match; live-match controls overflowing on phones; badge text
   contrast; initialisation order of engine fields.
 - Tests: 22 engine + 2 landscape UI tests (phone and tablet) with screenshots in `docs/screenshots`.
+
+## 2026-11-14 — Tactics depth, training schedule, staff market
+- User asked to keep going in the "same style as FM24". Explained that the visual look of FM24
+  (skin, palette, icons, layout) is not copied; continued with its genre-defining depth instead.
+- Tactics: duties, 36 roles with per-position menus, role suitability, 8 player instructions, set-piece
+  takers and corner routines — wired into the 2D engine (positioning, runs, pressing, decisions, tackles).
+- Training: weekly schedule with session loads, daily condition effects, injury risk, tactical familiarity;
+  individual attribute focus and position retraining.
+- Staff: staff market pool per role, hire/dismiss from a new Staff screen.
+- Save schema v3 (defaults only). 28 engine tests + 2 UI tests green.

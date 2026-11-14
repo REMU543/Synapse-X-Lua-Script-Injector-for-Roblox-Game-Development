@@ -14,6 +14,43 @@ import kotlin.math.pow
 object Development {
     private val physical = Attr.entries.filter { it.group == AttrGroup.PHYSICAL }
 
+    /** Default weekly schedule (Mon..Sun) derived from a focus. */
+    fun defaultPlan(focus: TrainingFocus): List<Session> = when (focus) {
+        TrainingFocus.ATTACKING -> listOf(Session.RECOVERY, Session.ATTACKING, Session.TECHNICAL, Session.ATTACKING, Session.TACTICAL, Session.MATCH_PREP, Session.REST)
+        TrainingFocus.DEFENDING -> listOf(Session.RECOVERY, Session.DEFENDING, Session.TACTICAL, Session.DEFENDING, Session.FITNESS, Session.MATCH_PREP, Session.REST)
+        TrainingFocus.PHYSICAL -> listOf(Session.RECOVERY, Session.FITNESS, Session.TECHNICAL, Session.FITNESS, Session.TACTICAL, Session.MATCH_PREP, Session.REST)
+        TrainingFocus.TECHNICAL -> listOf(Session.RECOVERY, Session.TECHNICAL, Session.TECHNICAL, Session.FITNESS, Session.ATTACKING, Session.MATCH_PREP, Session.REST)
+        TrainingFocus.TACTICAL -> listOf(Session.RECOVERY, Session.TACTICAL, Session.TECHNICAL, Session.TACTICAL, Session.SET_PIECES, Session.MATCH_PREP, Session.REST)
+        TrainingFocus.MATCH_PREP -> listOf(Session.RECOVERY, Session.TACTICAL, Session.SET_PIECES, Session.MATCH_PREP, Session.TECHNICAL, Session.MATCH_PREP, Session.REST)
+        TrainingFocus.BALANCED -> listOf(Session.RECOVERY, Session.TECHNICAL, Session.TACTICAL, Session.FITNESS, Session.ATTACKING, Session.MATCH_PREP, Session.REST)
+    }
+
+    fun plan(club: Club?): List<Session> = club?.weeklyPlan?.takeIf { it.size == 7 } ?: defaultPlan(club?.trainingFocus ?: TrainingFocus.BALANCED)
+
+    private val attackSet = setOf(Attr.FINISHING, Attr.DRIBBLING, Attr.OFF_THE_BALL, Attr.CROSSING, Attr.FIRST_TOUCH, Attr.COMPOSURE, Attr.LONG_SHOTS)
+    private val defendSet = setOf(Attr.TACKLING, Attr.MARKING, Attr.POSITIONING, Attr.HEADING, Attr.CONCENTRATION, Attr.ANTICIPATION, Attr.BRAVERY)
+    private val tacticalSet = setOf(Attr.DECISIONS, Attr.TEAMWORK, Attr.POSITIONING, Attr.VISION, Attr.WORK_RATE, Attr.OFF_THE_BALL)
+    private val setPieceSet = setOf(Attr.CORNERS, Attr.FREE_KICK, Attr.PENALTY, Attr.LONG_THROWS, Attr.HEADING)
+
+    /** Growth multiplier for an attribute from the week's sessions. */
+    fun planBoost(plan: List<Session>, a: Attr): Double {
+        var b = 0.82
+        for (s in plan) b += when (s) {
+            Session.TECHNICAL -> if (a.group == AttrGroup.TECHNICAL) 0.14 else 0.0
+            Session.ATTACKING -> if (a in attackSet) 0.18 else 0.0
+            Session.DEFENDING -> if (a in defendSet) 0.18 else 0.0
+            Session.FITNESS -> if (a.group == AttrGroup.PHYSICAL) 0.22 else 0.0
+            Session.TACTICAL -> if (a in tacticalSet) 0.16 else 0.0
+            Session.SET_PIECES -> if (a in setPieceSet) 0.3 else 0.0
+            Session.MATCH_PREP -> if (a.group == AttrGroup.MENTAL) 0.04 else 0.0
+            else -> 0.0
+        }
+        return b
+    }
+
+    /** Weekly training load (sum of session loads; default plans ≈ 9). */
+    fun load(plan: List<Session>) = plan.sumOf { it.load }
+
     private fun focusBoost(focus: TrainingFocus, a: Attr): Double = when (focus) {
         TrainingFocus.BALANCED -> 1.0
         TrainingFocus.ATTACKING -> if (a in setOf(Attr.FINISHING, Attr.DRIBBLING, Attr.OFF_THE_BALL, Attr.CROSSING, Attr.FIRST_TOUCH, Attr.COMPOSURE)) 1.6 else 0.85
@@ -61,7 +98,8 @@ object Development {
         val gamesShare = (p.season.minutes / (90.0 * weeksIntoSeason(world).coerceAtLeast(1))).coerceIn(0.0, 1.0)
         val play = if (age < 19) 0.75 + 0.35 * gamesShare else 0.55 + 0.6 * gamesShare
         val prof = 0.55 + 0.9 * p.personality.professionalism / 20.0
-        val intensity = (club?.trainingIntensity ?: 2) / 2.0
+        val plan = plan(club)
+        val intensity = (club?.trainingIntensity ?: 2) / 2.0 * (0.7 + 0.3 * load(plan) / 9.0)
         val injured = if (p.injuryDays > 0) 0.3 else 1.0
         val growthCa = 0.45 * (headroom / 35.0).coerceAtMost(1.6) * ageF * train * play * prof * injured *
             (0.85 + 0.15 * intensity) * (0.6 + 0.8 * rng.nextDouble())
@@ -69,12 +107,12 @@ object Development {
         val netAvg = (growthCa - declineCa) * 19.0 / 200.0
         if (netAvg == 0.0) return
         val w = Ability.weights(p.position)
-        val focus = club?.trainingFocus ?: TrainingFocus.BALANCED
         for (a in Attr.entries) {
             val i = a.ordinal
             if (p.position != Position.GK && a.group == AttrGroup.GOALKEEPING) continue
             var d = if (netAvg > 0) {
-                netAvg * (if (w[i] > 0) 1.0 else 0.45) * focusBoost(focus, a) * (0.5 + rng.nextDouble())
+                netAvg * (if (w[i] > 0) 1.0 else 0.45) * planBoost(plan, a) * (0.5 + rng.nextDouble()) *
+                    (if (p.individualAttr == a) 2.0 else if (p.individualAttr != null) 0.95 else 1.0)
             } else {
                 // Decline: physical attributes fall much faster; mental ones can still improve slightly.
                 when (a.group) {
@@ -86,6 +124,20 @@ object Development {
             if (a in physical && age < 21 && netAvg > 0) d *= 1.3
             val nv = (p.attrs[i] + Math.round(d * 100).toInt()).coerceIn(100, 2000)
             p.attrs[i] = nv.toShort()
+        }
+        // Position retraining: after enough weeks the player becomes competent in the new position.
+        p.retrainPosition?.let { pos ->
+            if (pos == p.position || pos in p.secondary) { p.retrainPosition = null; p.retrainWeeks = 0 }
+            else {
+                p.retrainWeeks++
+                val needed = (26 - p.personality.adaptability / 2 - (if (Ability.familiarity(p, pos) >= 0.8) 8 else 0)).coerceAtLeast(8)
+                if (p.retrainWeeks >= needed) {
+                    p.secondary = (p.secondary + pos).distinct()
+                    p.retrainPosition = null; p.retrainWeeks = 0
+                    if (club != null && club.id == world.manager.clubId) world.inbox.add(InboxMessage(world.newId(), today, MsgType.NEWS, "retrain_done",
+                        listOf(p.name, pos.label(world.settings.lang)), ref = p.id))
+                }
+            }
         }
         val before = p.ca
         Ability.recompute(p)
@@ -114,7 +166,9 @@ object Development {
                 p.injuryDays -= if (physio >= 15 && (world.today + p.id) % 4 == 0L) 2 else 1
                 if (p.injuryDays <= 0) { p.injuryDays = 0; p.injuryName = ""; p.condition = 70 }
             } else {
-                p.condition = (p.condition + (5 + 4 * nat).toInt()).coerceAtMost(100)
+                val session = plan(club).getOrNull(Cal.dayOfWeek(world.today) - 1) ?: Session.TECHNICAL
+                val delta = when (session) { Session.REST -> 4; Session.RECOVERY -> 3; Session.FITNESS -> -3; else -> -session.load }
+                p.condition = (p.condition + (5 + 4 * nat).toInt() + delta).coerceIn(30, 100)
             }
             if (p.morale > 70) p.morale-- else if (p.morale < 60) p.morale++
         }
@@ -124,7 +178,7 @@ object Development {
     fun trainingInjuries(world: World) {
         for (club in world.clubs.values) {
             val rng = Rng.stream(world.seed, "trainInj", club.id, world.today.toLong())
-            val risk = 0.0025 * (club.trainingIntensity / 2.0)
+            val risk = 0.0025 * (club.trainingIntensity / 2.0) * (load(plan(club)) / 9.0)
             for (id in club.playerIds) {
                 val p = world.players[id] ?: continue
                 if (p.injuryDays > 0) continue
@@ -262,6 +316,21 @@ object Development {
         return retired
     }
 
+    val hireableRoles = listOf(StaffRole.ASSISTANT, StaffRole.COACH, StaffRole.GK_COACH, StaffRole.FITNESS_COACH,
+        StaffRole.SCOUT, StaffRole.PHYSIO, StaffRole.YOUTH_COACH, StaffRole.ANALYST, StaffRole.DIRECTOR_OF_FOOTBALL)
+
+    /** Keeps at least six unemployed candidates per hireable staff role (the staff market). */
+    fun ensureStaffPool(world: World, rng: Rng = Rng.stream(world.seed, "staffpool", world.today.toLong())) {
+        for (role in hireableRoles) {
+            val have = world.staff.values.count { it.clubId < 0 && it.role == role }
+            repeat((6 - have).coerceAtLeast(0)) {
+                val nation = world.nations[rng.nextInt(5)]
+                val s = Factory.staff(world, rng, nation, role, rng.range(4.0, 15.0), rng.range(30, 60))
+                world.staff[s.id] = s
+            }
+        }
+    }
+
     /** Staff ageing: old staff retire; unemployed pool is kept at a healthy size. */
     fun staffTurnover(world: World) {
         val rng = Rng.stream(world.seed, "staffturnover", world.season.toLong())
@@ -272,6 +341,7 @@ object Development {
                 world.staff.remove(s.id)
             }
         }
+        ensureStaffPool(world, rng)
         val unemployedManagers = world.staff.values.count { it.clubId < 0 && it.role == StaffRole.MANAGER }
         repeat((20 - unemployedManagers).coerceAtLeast(0)) {
             val nation = world.nations[rng.nextInt(5)]

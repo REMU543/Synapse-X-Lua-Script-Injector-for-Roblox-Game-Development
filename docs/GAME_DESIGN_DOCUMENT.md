@@ -80,3 +80,19 @@ deadline; broken promises hit the player hard and spread to the leaders of the d
 Landscape only. Information-dense panels and sortable tables in the tradition of desktop football
 management games, but with an original visual identity (own palettes, layout and icons; no assets,
 skins or trademarks from other games).
+
+## Roles, duties and player instructions
+Each formation slot has a role from a position-specific menu and a duty allowed by that role.
+In the 2D engine: Attack duty pushes the player 5 m higher and makes him run beyond the line more
+eagerly; Defend duty keeps him 6 m deeper and stops forward runs. Roles add their own movement
+(wing-backs and complete wing-backs push high, half-backs drop between the centre-backs, mezzalas
+drift wide and high, shadow strikers arrive late, inverted wingers come inside, pressing forwards and
+ball-winners join the press, sweeper keepers start higher). Player instructions change single terms:
+shooting threshold & bias, dribble and cross utility, pressing eagerness, width, forward runs,
+tackle rate/strength/foul risk.
+
+## Training
+Seven daily sessions with a load each. Development of an attribute is multiplied by the sessions that
+train it; the weekly load scales intensity and training-injury risk; rest/recovery days restore
+condition, fitness days drain it. Individual focus doubles growth of one attribute. Retraining a
+position takes 8–26 weeks depending on adaptability and how related the position is.

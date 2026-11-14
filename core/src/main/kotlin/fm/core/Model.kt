@@ -127,6 +127,11 @@ class Player(
     var wantsOut: Boolean = false,
     /** Last day the manager talked privately with the player (limits spam). */
     var lastChatDay: Int = -999,
+    /** Individual training: attribute to emphasise (null = none). */
+    var individualAttr: Attr? = null,
+    /** Individual training: position being learnt (null = none). */
+    var retrainPosition: Position? = null,
+    var retrainWeeks: Int = 0,
 ) {
     val name: String get() = "$firstName $lastName".trim()
     val shortName: String get() = if (firstName.isEmpty()) lastName else "${firstName.first()}. $lastName"
@@ -258,7 +263,23 @@ class Club(
     /** Annual sponsorship + commercial income at the club's reference reputation. */
     var commercialBase: Long = 0,
     var commercialRepRef: Int = 50,
+    /** Weekly schedule Monday..Sunday (empty = derived from trainingFocus). */
+    var weeklyPlan: MutableList<Session> = mutableListOf(),
 )
+
+/** One training session in the weekly schedule. */
+enum class Session(val id: String, val en: String, val load: Int) {
+    REST("Istirahat", "Rest", 0),
+    RECOVERY("Pemulihan", "Recovery", 0),
+    FITNESS("Fisik", "Fitness", 3),
+    TECHNICAL("Teknik", "Technical", 2),
+    TACTICAL("Taktik", "Tactical", 1),
+    ATTACKING("Menyerang", "Attacking", 2),
+    DEFENDING("Bertahan", "Defending", 2),
+    SET_PIECES("Bola Mati", "Set Pieces", 1),
+    MATCH_PREP("Persiapan Laga", "Match Preparation", 1);
+    fun label(lang: Lang) = if (lang == Lang.ID) id else en
+}
 
 enum class TrainingFocus(val id: String, val en: String) {
     BALANCED("Seimbang", "Balanced"),

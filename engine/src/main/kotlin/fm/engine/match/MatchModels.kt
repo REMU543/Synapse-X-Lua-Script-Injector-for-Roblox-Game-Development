@@ -14,6 +14,11 @@ class TeamSheet(
     val formation: Formation,
     val maxSubs: Int,
     val familiarity: Double = 0.8,
+    val penaltyTakerId: Long = -1,
+    val freeKickTakerId: Long = -1,
+    val cornerTakerId: Long = -1,
+    val cornerRoutine: CornerRoutine = CornerRoutine.MIXED,
+    val captainId: Long = -1,
 )
 
 class MatchSetup(

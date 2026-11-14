@@ -495,8 +495,9 @@ class MatchEngine2D(val setup: MatchSetup) {
         if (!isGk && dg < 33) {
             val xg = xgAt(t, x, y) * (1 - 0.3 * min(pr, 2.0)) * openGoal(t, x, y)
             val skill = if (dg < 18) at(i, Attr.FINISHING) else 0.5 * at(i, Attr.LONG_SHOTS) + 0.5 * at(i, Attr.FINISHING)
-            val bias = 1 + (ins.shootingRange - 0.5) * 0.8 + ins.mentality.value * 0.1
-            val threshold = 0.02 + (0.5 - ins.shootingRange) * 0.02
+            val pins = slotAt[i]!!.instructions
+            val bias = (1 + (ins.shootingRange - 0.5) * 0.8 + ins.mentality.value * 0.1) * (if (pins.shootMore) 1.25 else 1.0)
+            val threshold = (0.02 + (0.5 - ins.shootingRange) * 0.02) * (if (pins.shootMore) 0.6 else 1.0)
             if (xg >= threshold || (dg < 12 && pr < 0.5)) {
                 val u = jitter(xg * (0.75 + 0.5 * skill) * bias * SHOOT_WEIGHT)
                 if (u > bestU) { bestU = u; bestKind = 1 }
@@ -530,7 +531,7 @@ class MatchEngine2D(val setup: MatchSetup) {
             val accuracy = if (crossing) 0.6 * at(i, Attr.CROSSING) + 0.4 * at(i, Attr.TECHNIQUE) else acc
             var pS = (0.97 - d * (PASS_DIST_PENALTY - 0.004 * accuracy) - (if (lofted) 0.1 else 0.0)) *
                 (1 - risk) * (1 - 0.3 * recvPress) * (1 - 0.1 * min(pr, 2.0))
-            if (crossing) pS *= 0.55 + 0.3 * ins.crossing
+            if (crossing) pS *= (0.55 + 0.3 * ins.crossing) * (if (slotAt[i]!!.instructions.crossMore) 1.3 else 1.0)
             pS = pS.coerceIn(0.02, 0.98)
             val offside = ju > L / 2 && ju > uOf(t, ballX) && ju > offsideU + 0.3
             if (offside) pS *= 0.25
@@ -550,7 +551,7 @@ class MatchEngine2D(val setup: MatchSetup) {
             val space = nearestOpponentDist(t, carryX, carryY)
             val drib = 0.5 * at(i, Attr.DRIBBLING) + 0.25 * at(i, Attr.AGILITY) + 0.25 * at(i, Attr.BALANCE)
             val pKeep = if (space > 6) 0.93 else (0.35 + 0.5 * drib - 0.1 * pr).coerceIn(0.1, 0.9)
-            val flair = 1 + 0.25 * (at(i, Attr.FLAIR) - 0.5)
+            val flair = (1 + 0.25 * (at(i, Attr.FLAIR) - 0.5)) * (if (slotAt[i]!!.instructions.dribbleMore) 1.3 else 1.0)
             val u = jitter(pKeep * value(t, carryX, carryY) * flair - (1 - pKeep) * value(1 - t, x, y) * 0.5)
             if (u > bestU) { bestU = u; bestKind = 3; bestTx = carryX; bestTy = carryY }
         }
@@ -778,12 +779,13 @@ class MatchEngine2D(val setup: MatchSetup) {
             val d = dist(px[k], py[k], px[o], py[o])
             if (d > 1.4) continue
             val ins = sheets[1 - t].instructions
-            val rate = 0.12 * (0.6 + 0.4 * at(k, Attr.AGGRESSION) + 0.4 * ins.pressing)
+            val hard = slotAt[k]?.instructions?.tackleHarder == true
+            val rate = 0.12 * (0.6 + 0.4 * at(k, Attr.AGGRESSION) + 0.4 * ins.pressing) * (if (hard) 1.3 else 1.0)
             if (!rng.chance(rate)) continue
             tackleCooldown[k] = 0.7
             val def = 0.6 * at(k, Attr.TACKLING) + 0.2 * at(k, Attr.POSITIONING) + 0.2 * at(k, Attr.STRENGTH)
             val att = 0.6 * at(o, Attr.DRIBBLING) + 0.2 * at(o, Attr.AGILITY) + 0.2 * at(o, Attr.STRENGTH)
-            val pWin = (0.45 + 0.45 * (def - att) + 0.08 * (energy[o] - energy[k])).coerceIn(0.15, 0.8)
+            val pWin = (0.45 + 0.45 * (def - att) + 0.08 * (energy[o] - energy[k]) + (if (hard) 0.05 else 0.0)).coerceIn(0.15, 0.8)
             dbg("tackleAttempts")
             if (rng.chance(pWin)) {
                 stats[1 - t].tackles++
@@ -795,7 +797,7 @@ class MatchEngine2D(val setup: MatchSetup) {
             val inOwnBoxTackle = uOf(t, px[o]) > L - 16.5 && abs(py[o] - W / 2) < 20.16
             val booked = (pm[playerAt[k]!!.id]?.yellow ?: 0) >= 1
             val pFoul = (0.09 + 0.16 * at(k, Attr.AGGRESSION) - 0.07 * at(k, Attr.TACKLING)).coerceIn(0.03, 0.35) *
-                (if (inOwnBoxTackle) 0.22 else 1.0) * (if (booked) 0.6 else 1.0)
+                (if (inOwnBoxTackle) 0.22 else 1.0) * (if (booked) 0.6 else 1.0) * (if (hard) 1.4 else 1.0)
             if (rng.chance(pFoul)) { foul(k, o); return }
             tackleCooldown[k] = 1.2 // beaten
         }
@@ -932,7 +934,8 @@ class MatchEngine2D(val setup: MatchSetup) {
 
         if (isGk) {
             // Goalkeeper on the line between ball and goal centre.
-            val depth = if (ballU < 52) 1.5 + 4.0 * at(i, Attr.RUSHING_OUT) * (1 - ballU / 52) else 8.0 + 6.0 * at(i, Attr.RUSHING_OUT)
+            val sweeper = if (slot.role == Role.SWEEPER_KEEPER) 5.0 else 0.0
+            val depth = if (ballU < 52) 1.5 + 4.0 * at(i, Attr.RUSHING_OUT) * (1 - ballU / 52) else 8.0 + 6.0 * at(i, Attr.RUSHING_OUT) + sweeper
             u = depth.coerceAtMost(16.0)
             v = W / 2 + (ballV - W / 2) * (if (ballU < 40) 0.12 else 0.05)
             // Come for loose balls in the box
@@ -954,21 +957,39 @@ class MatchEngine2D(val setup: MatchSetup) {
                 Role.INSIDE_FORWARD -> { v = W / 2 + (v - W / 2) * 0.7; u += 3 }
                 Role.FALSE_NINE -> u -= 8
                 Role.ADVANCED_PLAYMAKER, Role.DEEP_PLAYMAKER -> u -= 2
+                Role.LIBERO -> u += 5
+                Role.COMPLETE_WING_BACK -> u += 15
+                Role.HALF_BACK -> { u -= 6; v = W / 2 + (v - W / 2) * 0.3 }
+                Role.MEZZALA -> { u += 6; v = W / 2 + (v - W / 2) * 1.35 }
+                Role.ROAMING_PLAYMAKER -> u += 4
+                Role.SHADOW_STRIKER -> u += 9
+                Role.INVERTED_WINGER -> { v = W / 2 + (v - W / 2) * 0.78 }
+                Role.DEEP_LYING_FORWARD -> u -= 5
+                Role.NO_NONSENSE_CB -> u -= 2
                 else -> {}
             }
+            val pi = slot.instructions
+            when (slot.duty) { Duty.ATTACK -> u += 5; Duty.DEFEND -> u -= 6; else -> {} }
+            if (pi.getForward) u += 5
+            if (pi.holdPosition) u -= 4
+            if (pi.stayWider) v = W / 2 + (v - W / 2) * 1.35
             // Attackers stay onside, and time runs beyond the line.
             val line = secondLastDefenderU(t)
-            if (slot.position.line == Line.ATT || slot.role == Role.BOX_TO_BOX) {
+            val makesRuns = (slot.position.line == Line.ATT || slot.role == Role.BOX_TO_BOX || slot.duty == Duty.ATTACK || pi.getForward ||
+                slot.role == Role.MEZZALA || slot.role == Role.SHADOW_STRIKER) && !pi.holdPosition && slot.duty != Duty.DEFEND
+            if (makesRuns) {
                 val runner = owner >= 0 && teamOf(owner) == t
                 val timing = 0.15 + 0.5 * at(i, Attr.OFF_THE_BALL) + 0.2 * at(i, Attr.ANTICIPATION)
-                if (runner && decisionTimer < timing && at(i, Attr.OFF_THE_BALL) > rng.nextDouble() * 1.2 && ballU > 30) {
+                val eager = if (slot.duty == Duty.ATTACK || pi.getForward) 1.3 else 1.0
+                if (runner && decisionTimer < timing && at(i, Attr.OFF_THE_BALL) * eager > rng.nextDouble() * 1.2 && ballU > 30) {
                     runTimer[i] = 1.5
                 }
                 if (runTimer[i] > 0) { runTimer[i] -= DT * 3; u = max(u, line + 6.0); sprint[i] = true }
                 else u = min(u, line - 0.7)
             }
             // Crash the box when the ball is wide in the final third.
-            if (ballU > L - 32 && abs(ballV - W / 2) > 14 && (slot.position == Position.ST || slot.position == Position.AMC ||
+            if (!pi.holdPosition && ballU > L - 32 && abs(ballV - W / 2) > 14 && (slot.position == Position.ST || slot.position == Position.AMC ||
+                    (slot.duty == Duty.ATTACK && slot.position.line == Line.MID) ||
                     (slot.position.line == Line.ATT && sign(slot.fy - 0.5) != sign(ballV - W / 2)))) {
                 u = L - jit(i, 6.0, 12.0); v = W / 2 + jit(i + 5, -6.0, 6.0); sprint[i] = true
             }
@@ -991,7 +1012,8 @@ class MatchEngine2D(val setup: MatchSetup) {
             val pressers = 1 + (if (ins.pressing > 0.6) 1 else 0) + (if (recentLoss) 1 else 0)
             val rank = chaseRank(i)
             val oppBallU = ballU // our frame: distance from our goal
-            if (rank < pressers && (oppBallU < engageU || oppBallU < 35)) {
+            val eagerPress = slot.instructions.closeDownMore || slot.role == Role.PRESSING_FORWARD || slot.role == Role.BALL_WINNER
+            if (rank < pressers + (if (eagerPress) 1 else 0) && (oppBallU < engageU + (if (eagerPress) 10 else 0) || oppBallU < 35)) {
                 u = ballU - 1.0; v = ballV
                 sprint[i] = at(i, Attr.WORK_RATE) + ins.pressing > 0.6 || oppBallU < 30
             }
@@ -1223,9 +1245,9 @@ class MatchEngine2D(val setup: MatchSetup) {
         ballX = restartX; ballY = restartY; ballZ = 0.0
         val taker: Int = when (restart) {
             Restart.GOAL_KICK -> goalkeeper(t).takeIf { it >= 0 } ?: nearestOfTeam(t, restartX, restartY)
-            Restart.PENALTY -> bestOf(t) { at(it, Attr.PENALTY) * 0.7 + at(it, Attr.COMPOSURE) * 0.3 }
-            Restart.CORNER -> bestOf(t) { at(it, Attr.CORNERS) * 0.7 + at(it, Attr.CROSSING) * 0.3 }
-            Restart.FREE_KICK -> if (uOf(t, restartX) > L - 32) bestOf(t) { at(it, Attr.FREE_KICK) } else nearestOfTeam(t, restartX, restartY)
+            Restart.PENALTY -> designated(t, sheets[t].penaltyTakerId) ?: bestOf(t) { at(it, Attr.PENALTY) * 0.7 + at(it, Attr.COMPOSURE) * 0.3 }
+            Restart.CORNER -> designated(t, sheets[t].cornerTakerId) ?: bestOf(t) { at(it, Attr.CORNERS) * 0.7 + at(it, Attr.CROSSING) * 0.3 }
+            Restart.FREE_KICK -> if (uOf(t, restartX) > L - 32) designated(t, sheets[t].freeKickTakerId) ?: bestOf(t) { at(it, Attr.FREE_KICK) } else nearestOfTeam(t, restartX, restartY)
             else -> nearestOfTeam(t, restartX, restartY)
         }
         if (taker < 0) { setRestart(Restart.KICKOFF, t, L / 2, W / 2, 1.0); return }
@@ -1248,9 +1270,21 @@ class MatchEngine2D(val setup: MatchSetup) {
                 shotIsPenalty = true
             }
             Restart.CORNER -> {
-                // Deliver into the box toward the best aerial attacker.
-                val target = bestOf(t, exclude = taker) { if (uOf(t, px[it]) > L - 20) at(it, Attr.HEADING) + at(it, Attr.JUMPING) else 0.0 }
-                val (ax, ay) = toWorld(t, L - rng.range(5.0, 12.0), W / 2 + rng.range(-7.0, 7.0))
+                // Deliver according to the corner routine toward the best target.
+                val near = if (vOf(t, restartY) < W / 2) -1.0 else 1.0 // side of the near post in team frame
+                val routine = sheets[t].cornerRoutine.let { if (it == CornerRoutine.MIXED) CornerRoutine.entries[1 + rng.nextInt(3)] else it }
+                val edge = routine == CornerRoutine.EDGE_OF_AREA
+                val target = if (edge) bestOf(t, exclude = taker) { at(it, Attr.LONG_SHOTS) + at(it, Attr.TECHNIQUE) * 0.5 }
+                    else bestOf(t, exclude = taker) { if (uOf(t, px[it]) > L - 20) at(it, Attr.HEADING) + at(it, Attr.JUMPING) else 0.0 }
+                val (tu, tv) = when (routine) {
+                    CornerRoutine.NEAR_POST -> L - rng.range(3.5, 6.5) to W / 2 + near * rng.range(2.0, 4.5)
+                    CornerRoutine.FAR_POST -> L - rng.range(4.5, 7.5) to W / 2 - near * rng.range(2.5, 5.0)
+                    CornerRoutine.EDGE_OF_AREA -> L - rng.range(17.0, 20.0) to W / 2 + rng.range(-5.0, 5.0)
+                    else -> L - rng.range(9.0, 12.0) to W / 2 + rng.range(-3.0, 3.0)
+                }
+                if (target >= 0 && !edge) { val (wx, wy) = toWorld(t, tu, tv); px[target] = (px[target] + wx) / 2; py[target] = (py[target] + wy) / 2 }
+                if (target >= 0 && edge) { val (wx, wy) = toWorld(t, tu, tv); px[target] = wx; py[target] = wy }
+                val (ax, ay) = toWorld(t, tu, tv)
                 passTarget = target; passer = taker; passIsCross = true; passOffside = false
                 stats[t].passes++
                 lastPasser = taker; lastPassTime = clock
@@ -1272,6 +1306,12 @@ class MatchEngine2D(val setup: MatchSetup) {
             }
             else -> { gainPossession(taker); decisionTimer = if (restart == Restart.KICKOFF) 0.3 else 0.6 }
         }
+    }
+
+    /** Pitch index of the designated set-piece taker if he is on the pitch. */
+    private fun designated(t: Int, playerId: Long): Int? {
+        if (playerId < 0) return null
+        return (t * 11 until t * 11 + 11).firstOrNull { active[it] && playerAt[it]?.id == playerId }
     }
 
     private fun nearestOfTeam(t: Int, x: Double, y: Double): Int {

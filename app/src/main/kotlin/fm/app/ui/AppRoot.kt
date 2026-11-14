@@ -79,6 +79,7 @@ val navItems = listOf(
     NavItem(Screen.Transfers, "Transfer", "Transfers", Icons.Filled.ShoppingCart, 2),
     NavItem(Screen.Club, "Klub", "Club", Icons.Filled.Place, 3),
     NavItem(Screen.Finances, "Keuangan", "Finances", Icons.Filled.Info, 3),
+    NavItem(Screen.Staff, "Staf", "Staff", Icons.Filled.Face, 3),
     NavItem(Screen.Profile, "Manajer", "Manager", Icons.Filled.AccountCircle, 4),
     NavItem(Screen.Settings, "Pengaturan", "Settings", Icons.Filled.Settings, 4),
 )
@@ -176,6 +177,7 @@ private fun ScreenContent(vm: GameViewModel, screen: Screen) {
         Screen.Club -> ClubScreen(vm, w.manager.clubId)
         is Screen.ClubDetail -> ClubScreen(vm, screen.id)
         Screen.Finances -> FinanceScreen(vm)
+        Screen.Staff -> StaffScreen(vm)
         Screen.Inbox -> InboxScreen(vm)
         Screen.Profile -> ProfileScreen(vm)
         Screen.Settings -> SettingsScreen(vm)

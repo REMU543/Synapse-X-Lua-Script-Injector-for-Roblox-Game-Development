@@ -132,6 +132,8 @@ object Migrations {
     private val steps: Map<Int, (World) -> World> = mapOf(
         // 1 -> 2: dynamics (relationship, happiness, promises, press). New fields have defaults, nothing to convert.
         1 to { w -> w },
+        // 2 -> 3: roles/duties/player instructions, weekly training, individual training. Defaults only.
+        2 to { w -> w },
     )
 
     fun migrate(world: World, fromVersion: Int): World {
