@@ -1,0 +1,4 @@
+-keep class fm.core.** { *; }
+-keep class fm.engine.** { *; }
+-keepattributes *Annotation*, InnerClasses
+-dontwarn kotlinx.serialization.**
