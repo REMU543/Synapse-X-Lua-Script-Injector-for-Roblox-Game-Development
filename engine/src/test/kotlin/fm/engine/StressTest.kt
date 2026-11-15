@@ -47,6 +47,15 @@ class StressTest {
             report.appendLine("$s | ${w.players.size} | ${"%.1f".format(top)} | ${w.archive.size} | ${w.transfers.size} | " +
                 "${w.seasonHistory.last().champions[WorldGenerator.IDN_1]} | ${w.userClub?.name ?: "-"} $pos | $ms | ${info.sizeBytes / 1024}")
         }
+        // Competitive balance: no club should dominate a league for decades.
+        val balance = StringBuilder()
+        var worst = 0
+        for (comp in w.competitions.filter { it.type == CompType.LEAGUE }) {
+            val counts = w.seasonHistory.mapNotNull { it.champions[comp.id] }.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }
+            balance.appendLine("${comp.shortName}: " + counts.take(4).joinToString { "${it.key} ${it.value}" } + " (distinct ${counts.size})")
+            if (comp.tier == 1) worst = maxOf(worst, counts.firstOrNull()?.value ?: 0)
+        }
+        report.append(balance)
         println(report)
         Files.writeString(dir.toPath().resolve("../stress-report.txt").normalize(), report.toString())
         // Population stays bounded and the world keeps producing players.
@@ -54,6 +63,7 @@ class StressTest {
         val originalIds = (1000L..3600L)
         assertTrue(w.players.keys.count { it in originalIds } < initialPlayers / 10, "most of the original generation retired")
         assertTrue(promotedOrRelegated)
+        assertTrue(worst <= seasons * 2 / 5, "a club won $worst of $seasons titles\n$balance")
         assertTrue(w.archive.isNotEmpty())
         // Reload the final save and verify it.
         val loaded = store.load("stress")

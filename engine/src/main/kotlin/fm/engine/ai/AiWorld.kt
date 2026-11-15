@@ -85,7 +85,8 @@ object Board {
             val gap = club.expectedPosition - pos
             val league = world.comp(club.leagueId)
             val tierBase = (league.reputation + 10).coerceIn(10, 90)
-            var rep = club.reputation + gap * 0.6 + (tierBase - club.reputation) * 0.05
+            // Results move reputation, but it drifts back toward the league's level (competitive balance).
+            var rep = club.reputation + gap.coerceIn(-8, 8) * 0.5 + (tierBase - club.reputation) * 0.09
             if (club.honours.any { it.startsWith("${world.season}:") }) rep += 3
             club.reputation = Math.round(rep).toInt().coerceIn(1, 100)
             club.fanBase = (club.fanBase * (1.0 + gap * 0.01)).toInt().coerceAtLeast(500)

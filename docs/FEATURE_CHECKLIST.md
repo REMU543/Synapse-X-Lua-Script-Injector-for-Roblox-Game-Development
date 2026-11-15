@@ -16,7 +16,7 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ✅ National teams for all 10 nations: 23-man call-ups each international window (4 per season), friendlies, caps & international goals, injuries on duty
 - ✅ Biennial Asia-Pacific Cup (even years, December): seeded draw, 2 groups of 4, semi-finals, final with extra time/penalties; history of winners
 - ✅ Database packs: JSON (clubs + players) and CSV (players) import with validation (errors block, warnings inform); export of the current world as an editable pack; import on the new-career screen, export in Settings; CLI `export-pack` / `validate-pack`
-- 🟡 In-app editor: edit through the exported JSON (any text editor) and re-import; no on-device field editor yet
+- ✅ In-game editor: club name, short name, city, stadium, capacity, reputation, colours; player names
 
 ## Management
 - ✅ Squad screen (sortable), player profile (attributes, contract, history), squad statuses
@@ -74,6 +74,7 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ✅ Live assistant advice (possession, shots conceded, chance quality, chasing/protecting, fatigue, bookings, poor performers)
 - ✅ Post-match report: scorers, cards, player of the match, stat bars, ratings for both teams
 - ✅ Post-match press conference
+- ✅ Context-aware press questions (form, injury crisis, cup, top-of-table clash, breakthrough youngster, transfer rumour, board pressure, red card, heavy defeat, clean sheet) with question-specific consequences
 
 ## Squad dynamics & interaction
 - ✅ Influence hierarchy (team leaders, highly influential, influential, others)
@@ -93,4 +94,5 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ⬜ Release signing, store listing
 
 ## Online (optional)
-- ⬜ Cloud backup / sync, community databases, leaderboards (deliberately not in MVP; no paid services)
+- ✅ Save backup/restore to any user-chosen location (incl. cloud drives) through the Android file picker; verified before import; a newer local save is never overwritten without explicit confirmation (restore as copy / overwrite / cancel)
+- ⬜ Automatic cross-device sync, community databases, leaderboards (would need a backend; no paid services without approval)

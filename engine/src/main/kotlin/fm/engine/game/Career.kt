@@ -515,6 +515,33 @@ class Career(val world: World) {
 
     fun staffWageFor(s: Staff): Long = WorldGenerator.staffWage(world.nation(world.userClub?.nationId ?: 1), s.role, s.quality())
 
+    // ------------------------------------------------------------------ in-game database editor
+
+    data class ClubEdit(val name: String, val shortName: String, val city: String, val stadium: String, val reputation: Int,
+                        val primaryColor: Long, val secondaryColor: Long, val capacity: Int)
+
+    /** Applies editor changes to a club. Returns a list of problems (empty = saved). */
+    fun editClub(clubId: Long, e: ClubEdit): List<String> {
+        val club = world.clubs[clubId] ?: return listOf("unknown club")
+        val problems = mutableListOf<String>()
+        if (e.name.isBlank()) problems += "name"
+        if (world.clubs.values.any { it.id != clubId && it.name.equals(e.name.trim(), ignoreCase = true) }) problems += "duplicate name"
+        if (e.reputation !in 1..100) problems += "reputation"
+        if (e.capacity !in 500..120_000) problems += "capacity"
+        if (problems.isNotEmpty()) return problems
+        club.name = e.name.trim(); club.shortName = e.shortName.trim().uppercase().take(4).ifBlank { club.name.take(3).uppercase() }
+        club.city = e.city.trim(); club.stadiumName = e.stadium.trim(); club.reputation = e.reputation
+        club.primaryColor = e.primaryColor; club.secondaryColor = e.secondaryColor; club.stadiumCapacity = e.capacity
+        return emptyList()
+    }
+
+    fun editPlayerName(playerId: Long, first: String, last: String): Boolean {
+        val p = world.players[playerId] ?: return false
+        if (last.isBlank()) return false
+        p.firstName = first.trim(); p.lastName = last.trim()
+        return true
+    }
+
     fun leagueTable(compId: Int): List<TableRow> = world.compSeasons[compId]?.let { CompetitionEngine.sortedTable(world, it) } ?: emptyList()
 
     fun message(m: InboxMessage) = I18n.t(lang, m.key, m.args)

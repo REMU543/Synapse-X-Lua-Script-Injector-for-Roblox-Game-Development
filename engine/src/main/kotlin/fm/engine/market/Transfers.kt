@@ -37,6 +37,7 @@ object Transfers {
             if (squad.size > MAX_SQUAD) shedPlayer(world, club, rng, squad)
             if (rng.chance(0.35)) tryBuy(world, club, rng, squad)
             if (rng.chance(0.15)) loanOutYouth(world, club, rng, squad)
+            if (rng.chance(0.2)) sellSurplusQuality(world, club, rng, squad)
         }
         bidsForUserListedPlayers(world)
     }
@@ -194,6 +195,22 @@ object Transfers {
             val nation = world.nation(buyer.nationId)
             completeTransfer(world, worst, club, buyer, worst.value / 2, Valuation.wage(worst.ca, nation, buyer.reputation), rng.range(1, 3))
         } else release(world, worst)
+    }
+
+    /**
+     * Big clubs do not hoard: a good player outside the top 18 who wants minutes is sold to a
+     * smaller club in the same nation that can use him (spreads talent, keeps leagues competitive).
+     */
+    private fun sellSurplusQuality(world: World, club: Club, rng: Rng, squad: List<Player>) {
+        val ranked = squad.filter { it.clubId == club.id && it.loanClubId < 0 }.sortedByDescending { it.ca }
+        val surplus = ranked.drop(18).firstOrNull { it.age(world.today) in 22..30 && it.ca >= (ranked.getOrNull(10)?.ca ?: 999) - 12 } ?: return
+        val buyers = world.clubs.values.filter { it.nationId == club.nationId && it.id != club.id && it.id != world.manager.clubId &&
+            it.reputation < club.reputation && lineLevel(world.squad(it.id), surplus.position.line) < surplus.ca && it.transferBudget >= surplus.value * 0.6 }
+        val buyer = buyers.maxByOrNull { it.reputation } ?: return
+        val nation = world.nation(buyer.nationId)
+        val wage = Valuation.wage(surplus.ca, nation, buyer.reputation)
+        if (playerAcceptsMove(world, surplus, club, buyer, wage) || surplus.benchWeeks > 6)
+            completeTransfer(world, surplus, club, buyer, Money.scale(surplus.value, 0.8), maxOf(wage, surplus.contract?.wage ?: 0), rng.range(2, 3))
     }
 
     fun release(world: World, p: Player) {

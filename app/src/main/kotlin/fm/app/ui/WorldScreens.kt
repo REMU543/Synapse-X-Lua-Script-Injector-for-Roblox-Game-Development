@@ -299,6 +299,7 @@ fun SettingsScreen(vm: GameViewModel) {
                     if (uri != null) vm.exportPack(uri)
                 }
                 OutlinedButton(onClick = { exporter.launch("database_${w.season}.json") }, Modifier.fillMaxWidth()) { Text(vm.t("Ekspor database (JSON)", "Export database (JSON)")) }
+                BackupControls(vm, canBackup = true)
                 SmallText(vm.t("File ekspor bisa diedit lalu diimpor saat membuat karier baru.", "Edit the exported file and import it when starting a new career."), MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

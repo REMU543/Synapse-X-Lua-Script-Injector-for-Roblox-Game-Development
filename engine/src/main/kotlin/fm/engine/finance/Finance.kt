@@ -34,7 +34,7 @@ object Finance {
 
     fun commercialIncome(club: Club): Long {
         val ratio = (club.reputation.toDouble() / club.commercialRepRef.coerceAtLeast(1)).coerceIn(0.2, 4.0)
-        return Math.round(club.commercialBase * ratio.pow(1.4))
+        return Math.round(club.commercialBase * ratio.pow(1.2))
     }
 
     fun attendance(world: World, home: Club, away: Club, rng: Rng, importance: Double = 1.0): Int {

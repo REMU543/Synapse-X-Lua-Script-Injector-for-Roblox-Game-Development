@@ -39,6 +39,7 @@ sealed class Screen {
     data object Staff : Screen()
     data object International : Screen()
     data object DataHub : Screen()
+    data object Editor : Screen()
     data object MatchDayFlow : Screen()
     data class PlayerDetail(val id: Long) : Screen()
     data class ClubDetail(val id: Long) : Screen()
@@ -178,6 +179,37 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun clearPack() { pendingPack = null; packIssues = emptyList() }
+
+    // ---------------------------------------------------------------- save backup (external file / cloud drive)
+    class PendingRestore(val bytes: ByteArray, val check: fm.engine.save.SaveStore.ImportCheck)
+    var pendingRestore: PendingRestore? by mutableStateOf(null)
+
+    /** Saves the current career and writes it to a user-chosen file (e.g. a cloud drive folder). */
+    fun backupSave(uri: android.net.Uri) = work {
+        val c = career ?: return@work
+        store.save(c.world, slot)
+        getApplication<Application>().contentResolver.openOutputStream(uri)?.use { it.write(store.exportBytes(slot)) }
+        toast = t("Cadangan tersimpan.", "Backup written.")
+    }
+
+    /** Reads and verifies a backup file; asks for confirmation if a newer local save exists. */
+    fun checkRestore(uri: android.net.Uri) {
+        try {
+            val bytes = getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return
+            val check = store.inspect(bytes)
+            if (check.localIsNewer) pendingRestore = PendingRestore(bytes, check)
+            else restore(PendingRestore(bytes, check), asCopy = false, overwrite = false)
+        } catch (e: Exception) { toast = t("Berkas cadangan rusak atau tidak valid.", "The backup file is damaged or invalid.") }
+    }
+
+    fun restore(p: PendingRestore, asCopy: Boolean, overwrite: Boolean) {
+        pendingRestore = null
+        val target = if (asCopy) p.check.info.slot + "_cadangan" else p.check.info.slot
+        try {
+            store.importBytes(p.bytes, target, overwriteNewer = overwrite)
+            load(target)
+        } catch (e: Exception) { toast = e.message }
+    }
 
     fun exportPack(uri: android.net.Uri) = work {
         val w = world ?: return@work

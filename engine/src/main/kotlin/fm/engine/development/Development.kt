@@ -213,7 +213,7 @@ object Development {
             val created = mutableListOf<Player>()
             repeat(n) {
                 val pos = rng.weighted(Position.entries) { if (it == Position.GK) 0.6 else if (it == Position.DC || it == Position.MC || it == Position.ST) 1.6 else 1.0 }
-                val paMean = 35 + nation.youthRating * 2.6 + club.youthFacilities * 2.0 + club.reputation * 0.3 + youthCoach * 0.6
+                val paMean = 40 + nation.youthRating * 2.6 + club.youthFacilities * 1.8 + club.reputation * 0.18 + youthCoach * 0.6
                 var pa = rng.gaussian(paMean, 22.0)
                 if (rng.chance(0.015)) pa += rng.range(25.0, 55.0) // rare wonderkid
                 val paI = pa.toInt().coerceIn(30, 195)

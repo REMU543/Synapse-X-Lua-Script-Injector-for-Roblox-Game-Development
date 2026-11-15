@@ -177,6 +177,10 @@ class AppSmokeTest {
         shot("25_home_after")
         go(vm, Screen.DataHub, "26_datahub")
         go(vm, Screen.International, "27_international")
+        go(vm, Screen.Editor, "28_editor")
+        rule.onNodeWithText("Simpan").performClick(); waitIdle(vm)
+        assertEquals(fm.core.I18n.t(fm.core.Lang.ID, "editor_saved"), vm.toast)
+        vm.toast = null
         // Save and reload
         rule.runOnUiThread { vm.save() }; waitIdle(vm)
         val slot = vm.slot

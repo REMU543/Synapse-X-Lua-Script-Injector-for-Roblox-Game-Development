@@ -7,7 +7,7 @@ emulator (no KVM), so the Android UI is tested with Robolectric on the JVM.
 
 | Suite | Command | Result |
 |---|---|---|
-| Engine unit/integration (34 tests) | `./gradlew :engine:test` | ✅ all pass (~1 min) |
+| Engine unit/integration (37 tests) | `./gradlew :engine:test` | ✅ all pass (~1 min) |
 | Android UI tests, landscape phone + tablet (Robolectric + Compose, with screenshots) | `./gradlew :app:testDebugUnitTest` | ✅ pass |
 | 30-season stress test | `./gradlew :engine:test --tests '*StressTest*' -Pstress` | ✅ pass (~6 min) |
 
@@ -43,8 +43,10 @@ emulator (no KVM), so the Android UI is tested with Robolectric on the JVM.
 
 ## Known issues / observations
 * FULL engine: corners (~1.2/team) are rarer than real football (~5); shots slightly high.
-* Long-term: one club won the Indonesian top flight in ~16 of 30 seasons. Rich-get-richer effects
-  (reputation → revenue → squad) need balancing.
+* Competitive balance (30 seasons, after balancing): Indonesia League 1 had 12 different champions
+  (most titles by one club: 7). Single-division leagues without relegation are more prone to dynasties
+  (Thailand: one club 11/30, Vietnam 9/30, Japan 10/30). The stress test asserts that no club wins more
+  than 40% of the titles of any top league.
 * Average CA in the top league drifts from ~85 to ~100 over 15 seasons, then stabilises.
 * The stress test plays the user's club on autopilot (no transfers), so its league positions are not
   representative of human play.

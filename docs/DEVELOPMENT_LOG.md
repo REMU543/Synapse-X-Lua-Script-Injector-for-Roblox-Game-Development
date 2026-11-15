@@ -56,3 +56,12 @@
   and happiness effects, UI tabs and moves. Save schema v5.
 - Database packs: JSON/CSV import with validation, apply to a new world, export of the current world,
   new-career import, settings export, CLI export/validate. Club city/stadium/colours became editable.
+
+## 2026-11-15 — Balance, press variety, editor, backups
+- Competitive balance: stronger reputation mean reversion, capped result effect, flatter commercial
+  curve, less reputation-driven youth quality, big clubs sell surplus quality to smaller clubs.
+  IDN1 dominance 10 → 7 titles in 30 seasons. Stress test now checks balance (≤ 40%).
+- Press: context-aware question pools with specific consequences.
+- In-game editor (clubs & player names); save backup/restore via the file picker with conflict
+  protection (never overwrite a newer local save without confirmation). Player names and several club
+  fields became mutable in the model.

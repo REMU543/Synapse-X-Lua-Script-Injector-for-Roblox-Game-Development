@@ -114,9 +114,51 @@ class SaveStore(private val dir: File) {
             if (String(magic) != "FMA1") return null
             inp.readInt(); inp.readLong()
             val h = ByteArray(inp.readInt()).also { inp.readFully(it) }
-            json.decodeFromString(SlotInfo.serializer(), String(h, Charsets.UTF_8)).copy(sizeBytes = f.length())
+            val slotFromFile = if (f.name.endsWith(".fmsave")) f.name.removeSuffix(".fmsave") else null
+            json.decodeFromString(SlotInfo.serializer(), String(h, Charsets.UTF_8)).let { i -> i.copy(slot = slotFromFile ?: i.slot, sizeBytes = f.length()) }
         }
     } catch (e: Exception) { null }
+
+    // ------------------------------------------------------------ external backup (e.g. cloud drive via file picker)
+
+    /** Raw bytes of a slot for writing to an external location. */
+    fun exportBytes(slot: String): ByteArray = file(slot).readBytes()
+
+    /** Result of inspecting an external backup before importing it. */
+    data class ImportCheck(val info: SlotInfo, val localInfo: SlotInfo?) {
+        /** True if a local save with the same slot exists and is newer (in game time or real time). */
+        val localIsNewer: Boolean get() = localInfo != null &&
+            (localInfo.day > info.day || (localInfo.day == info.day && localInfo.savedAtMillis > info.savedAtMillis))
+    }
+
+    /** Verifies a backup (magic, version, checksum, decodes the world) and compares it with the local slot. */
+    fun inspect(bytes: ByteArray): ImportCheck {
+        val tmp = File(dir, ".inspect.tmp")
+        tmp.writeBytes(bytes)
+        try {
+            loadFile(tmp) // throws CorruptSaveException if invalid
+            val info = readInfo(tmp) ?: throw CorruptSaveException("missing header")
+            return ImportCheck(info, info(info.slot))
+        } finally { tmp.delete() }
+    }
+
+    /**
+     * Writes a verified backup into [slot]. Never replaces a newer local save unless [overwriteNewer]
+     * is set explicitly by the user; the replaced save stays available as a backup (.bak1).
+     */
+    fun importBytes(bytes: ByteArray, slot: String, overwriteNewer: Boolean = false): SlotInfo {
+        val check = inspect(bytes)
+        val local = info(slot)
+        if (local != null && !overwriteNewer && (local.day > check.info.day || (local.day == check.info.day && local.savedAtMillis > check.info.savedAtMillis)))
+            throw IllegalStateException("local save is newer")
+        val target = file(slot)
+        if (target.exists()) {
+            for (i in 2 downTo 1) { val from = File(dir, "$slot.fmsave.bak$i"); if (from.exists()) from.renameTo(File(dir, "$slot.fmsave.bak${i + 1}")) }
+            target.renameTo(File(dir, "$slot.fmsave.bak1"))
+        }
+        File(dir, "$slot.fmsave").writeBytes(bytes)
+        return info(slot)!!
+    }
 
     fun list(): List<SlotInfo> = (dir.listFiles { f -> f.name.endsWith(".fmsave") }?.toList() ?: emptyList())
         .mapNotNull { readInfo(it) }.sortedByDescending { it.savedAtMillis }

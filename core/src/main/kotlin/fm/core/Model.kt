@@ -79,8 +79,8 @@ data class SeasonRecord(
 @Serializable
 class Player(
     val id: Long,
-    val firstName: String,
-    val lastName: String,
+    var firstName: String,
+    var lastName: String,
     val nationId: Int,
     val birthDay: Int,
     var position: Position,

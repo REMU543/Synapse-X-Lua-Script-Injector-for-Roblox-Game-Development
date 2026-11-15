@@ -117,6 +117,16 @@ object I18n {
         "intl_injury" to "{0} cedera saat membela timnas {1} dan absen {2} hari.",
         "intl_tournament_start" to "{0} dimulai!",
         "intl_champion" to "{0} menjuarai {1}!",
+        "press_pre_injuries" to "Anda kehilangan {0} pemain karena cedera. Bagaimana mengatasinya?",
+        "press_pre_cup" to "Seberapa penting {0} bagi klub musim ini?",
+        "press_pre_bigmatch" to "Ini laga papan atas melawan {0}. Apakah ini penentu gelar?",
+        "press_pre_youngster" to "{0} tampil luar biasa di usia muda. Apakah ia siap jadi pemain inti?",
+        "press_pre_rumour" to "Ada rumor {0} akan pindah. Apakah ia akan bertahan?",
+        "press_pre_pressure" to "Dewan dikabarkan mulai kehilangan kesabaran. Apakah posisi Anda aman?",
+        "press_post_red" to "{0} diusir keluar lapangan. Apakah ia mengecewakan tim?",
+        "press_post_heavy" to "Kekalahan telak {0}. Apa yang terjadi?",
+        "press_post_cleansheet" to "Menang tanpa kebobolan. Apakah lini belakang kunci sukses tim?",
+        "editor_saved" to "Perubahan editor disimpan.",
     )
     private val en = mapOf(
         "welcome" to "Welcome to {0}! The board expects a finish around position {1}. Good luck, {2}.",
@@ -230,6 +240,16 @@ object I18n {
         "intl_injury" to "{0} was injured on duty with {1} and is out for {2} days.",
         "intl_tournament_start" to "The {0} kicks off!",
         "intl_champion" to "{0} win the {1}!",
+        "press_pre_injuries" to "You have {0} players injured. How will you cope?",
+        "press_pre_cup" to "How important is the {0} to the club this season?",
+        "press_pre_bigmatch" to "It's a top-of-the-table clash with {0}. Is this a title decider?",
+        "press_pre_youngster" to "{0} has been excellent at a young age. Is he ready to be a regular?",
+        "press_pre_rumour" to "There are rumours {0} will leave. Will he stay?",
+        "press_pre_pressure" to "The board is said to be losing patience. Is your job safe?",
+        "press_post_red" to "{0} was sent off. Did he let the team down?",
+        "press_post_heavy" to "A heavy {0} defeat. What happened?",
+        "press_post_cleansheet" to "A win and a clean sheet. Is the defence the key to your success?",
+        "editor_saved" to "Editor changes saved.",
     )
 
     fun t(lang: Lang, key: String, args: List<String> = emptyList()): String {

@@ -83,6 +83,7 @@ val navItems = listOf(
     NavItem(Screen.Finances, "Keuangan", "Finances", Icons.Filled.List, 3),
     NavItem(Screen.Staff, "Staf", "Staff", Icons.Filled.Face, 3),
     NavItem(Screen.Profile, "Manajer", "Manager", Icons.Filled.AccountCircle, 4),
+    NavItem(Screen.Editor, "Editor", "Editor", Icons.Filled.Edit, 4),
     NavItem(Screen.Settings, "Pengaturan", "Settings", Icons.Filled.Settings, 4),
 )
 
@@ -182,6 +183,7 @@ private fun ScreenContent(vm: GameViewModel, screen: Screen) {
         Screen.Staff -> StaffScreen(vm)
         Screen.International -> InternationalScreen(vm)
         Screen.DataHub -> DataHubScreen(vm)
+        Screen.Editor -> EditorScreen(vm)
         Screen.Inbox -> InboxScreen(vm)
         Screen.Profile -> ProfileScreen(vm)
         Screen.Settings -> SettingsScreen(vm)
@@ -214,6 +216,7 @@ fun StartScreen(vm: GameViewModel) {
         }
         Column(Modifier.weight(1f).fillMaxHeight().padding(24.dp)) {
             Text(vm.t("Lanjutkan Karier", "Continue Career"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            BackupControls(vm, canBackup = false)
             Spacer(Modifier.height(8.dp))
             val slots = vm.slots()
             if (slots.isEmpty()) SmallText(vm.t("Belum ada karier tersimpan.", "No saved careers yet."), MaterialTheme.colorScheme.onSurfaceVariant)

@@ -216,14 +216,30 @@ object Press {
         val uid = world.manager.clubId
         val opp = world.club(if (f.homeId == uid) f.awayId else f.homeId)
         val club = world.club(uid)
-        val qs = mutableListOf(PressQuestion(1, "press_pre_opponent", listOf(opp.name)))
+        val comp = world.comp(f.compId)
+        val squad = world.squad(uid)
+        // Context-driven candidates (most specific first); the opening question is always about the opponent.
+        val cands = mutableListOf<PressQuestion>()
         val losses = club.form.takeLast(3).count { it == 'L' }
-        if (losses >= 2) qs += PressQuestion(2, "press_pre_badform", listOf(losses.toString()))
-        else if (club.form.takeLast(3).count { it == 'W' } >= 3) qs += PressQuestion(2, "press_pre_goodform")
-        val star = world.squad(uid).maxByOrNull { it.ca }
-        if (star != null) qs += PressQuestion(3, "press_pre_player", listOf(star.name), star.id)
-        if (club.expectedPosition <= 3) qs += PressQuestion(4, "press_pre_title")
-        return PressConference(world.today, true, f.id, qs.take(3))
+        if (losses >= 2) cands += PressQuestion(2, "press_pre_badform", listOf(losses.toString()))
+        else if (club.form.takeLast(3).count { it == 'W' } >= 3) cands += PressQuestion(2, "press_pre_goodform")
+        val injured = squad.count { !it.reserve && it.injuryDays > 0 }
+        if (injured >= 3) cands += PressQuestion(5, "press_pre_injuries", listOf(injured.toString()))
+        if (comp.type != CompType.LEAGUE) cands += PressQuestion(6, "press_pre_cup", listOf(comp.name(world.settings.lang)))
+        else {
+            val pu = fm.engine.competition.CompetitionEngine.position(world, uid); val po = fm.engine.competition.CompetitionEngine.position(world, opp.id)
+            if (pu in 1..3 && po in 1..3) cands += PressQuestion(7, "press_pre_bigmatch", listOf(opp.name))
+        }
+        squad.filter { it.age(world.today) <= 21 && it.season.apps >= 3 && it.season.avgRating >= 7.0 }.maxByOrNull { it.season.avgRating }
+            ?.let { cands += PressQuestion(8, "press_pre_youngster", listOf(it.name), it.id) }
+        if (fm.engine.market.Transfers.windowOpen(world)) squad.filter { it.wantsOut || it.personality.ambition >= 16 }.maxByOrNull { it.ca }
+            ?.let { cands += PressQuestion(9, "press_pre_rumour", listOf(it.name), it.id) }
+        if (club.boardConfidence < 35) cands += PressQuestion(10, "press_pre_pressure")
+        squad.maxByOrNull { it.ca }?.let { cands += PressQuestion(3, "press_pre_player", listOf(it.name), it.id) }
+        if (club.expectedPosition <= 3) cands += PressQuestion(4, "press_pre_title")
+        val rng = Rng.stream(world.seed, "pressq", f.id)
+        val chosen = (cands.take(2) + rng.shuffled(cands.drop(2))).distinctBy { it.key }.take(2)
+        return PressConference(world.today, true, f.id, listOf(PressQuestion(1, "press_pre_opponent", listOf(opp.name))) + chosen)
     }
 
     fun postMatch(world: World, f: Fixture, motmId: Long): PressConference {
@@ -234,9 +250,14 @@ object Press {
         val opp = world.club(if (home) f.awayId else f.homeId)
         val qs = mutableListOf(PressQuestion(1, when { gf > ga -> "press_post_win"; gf == ga -> "press_post_draw"; else -> "press_post_loss" }, listOf(opp.name, "$gf-$ga")))
         world.players[motmId]?.takeIf { it.playingFor == uid }?.let { qs += PressQuestion(2, "press_post_player", listOf(it.name), it.id) }
+        val myTeam = if (home) "0" else "1"
+        val red = f.events.map { it.split("|") }.firstOrNull { it.size >= 4 && it[1] == "RED" && it[2] == myTeam }?.get(3)?.toLongOrNull()
+        world.players[red ?: -1]?.let { qs += PressQuestion(4, "press_post_red", listOf(it.name), it.id) }
+        if (ga - gf >= 3) qs += PressQuestion(5, "press_post_heavy", listOf("$gf-$ga"))
+        if (gf > ga && ga == 0) qs += PressQuestion(6, "press_post_cleansheet")
         val weak = world.squad(uid).filter { it.season.apps >= 3 && it.season.avgRating < 6.4 }.minByOrNull { it.season.avgRating }
         if (weak != null) qs += PressQuestion(3, "press_post_weak", listOf(weak.name), weak.id)
-        return PressConference(world.today, false, f.id, qs.take(3))
+        return PressConference(world.today, false, f.id, qs.distinctBy { it.key }.take(3))
     }
 
     /** Effect of an answer; returns the localisation key of the media reaction. */
@@ -253,6 +274,19 @@ object Press {
                 it.morale = (it.morale + d).coerceIn(5, 100); it.relationship = (it.relationship - 8).coerceAtLeast(0)
             } ?: club?.let { c -> world.squad(c.id).forEach { it.morale = (it.morale - 2).coerceAtLeast(5) }; c.boardConfidence = (c.boardConfidence + 1).coerceAtMost(100) }
             Answer.DEFLECT -> world.mediaHype = (world.mediaHype - 1).coerceAtLeast(0)
+        }
+        // Question-specific consequences.
+        when (q.key) {
+            "press_pre_rumour" -> p?.let {
+                if (a == Answer.CONFIDENT) { it.relationship = (it.relationship + 4).coerceAtMost(100); it.morale = (it.morale + 3).coerceAtMost(100) }
+                if (a == Answer.CRITICAL) { it.unhappyWeeks += 2 }
+            }
+            "press_pre_youngster" -> if (a == Answer.PRAISE) p?.let { it.morale = (it.morale + 4).coerceAtMost(100) }
+            "press_pre_pressure" -> club?.let { c -> when (a) { Answer.CONFIDENT -> c.boardConfidence = (c.boardConfidence + 2).coerceAtMost(100)
+                Answer.CRITICAL -> c.boardConfidence = (c.boardConfidence - 3).coerceAtLeast(0); else -> {} } }
+            "press_post_red" -> if (a == Answer.CRITICAL) p?.let { it.morale = (it.morale - 4).coerceAtLeast(5) }
+            "press_post_heavy" -> if (a == Answer.CRITICAL) club?.let { c -> world.squad(c.id).forEach { it.morale = (it.morale - 2).coerceAtLeast(5) } }
+            "press_pre_bigmatch", "press_pre_cup" -> if (a == Answer.CONFIDENT) world.mediaHype = (world.mediaHype + 3).coerceAtMost(100)
         }
         val press = world.pendingPress
         if (press != null) { press.answered++; if (press.answered >= press.questions.size) world.pendingPress = null }
