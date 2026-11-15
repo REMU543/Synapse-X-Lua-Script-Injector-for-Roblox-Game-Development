@@ -50,3 +50,9 @@
   not paused during windows; national duty costs condition instead.
 - `DataHub`: team averages vs league, xG trend, leaders, per-90 stats from recorded fixture stats.
 - UI: International and Data Hub screens in the sidebar; caps on player profile. Save schema v4.
+
+## 2026-11-15 — Reserves and database packs
+- Reserves/U21: first-team/reserve split, weekly reserve league (IDN1 clubs), reserve stats, development
+  and happiness effects, UI tabs and moves. Save schema v5.
+- Database packs: JSON/CSV import with validation, apply to a new world, export of the current world,
+  new-career import, settings export, CLI export/validate. Club city/stadium/colours became editable.

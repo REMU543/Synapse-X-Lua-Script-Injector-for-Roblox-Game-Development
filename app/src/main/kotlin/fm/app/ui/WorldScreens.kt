@@ -295,6 +295,11 @@ fun SettingsScreen(vm: GameViewModel) {
                     Text(vm.t("Simpan otomatis", "Autosave"), Modifier.weight(1f)); Switch(w.settings.autosave, { v -> vm.act { it.world.settings.autosave = v } })
                 }
                 OutlinedButton(onClick = { vm.save(false); vm.navigate(Screen.Start, true) }, Modifier.fillMaxWidth()) { Text(vm.t("Simpan & ke menu utama", "Save & main menu")) }
+                val exporter = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")) { uri ->
+                    if (uri != null) vm.exportPack(uri)
+                }
+                OutlinedButton(onClick = { exporter.launch("database_${w.season}.json") }, Modifier.fillMaxWidth()) { Text(vm.t("Ekspor database (JSON)", "Export database (JSON)")) }
+                SmallText(vm.t("File ekspor bisa diedit lalu diimpor saat membuat karier baru.", "Edit the exported file and import it when starting a new career."), MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {

@@ -24,8 +24,9 @@ class Career(val world: World) {
     data class DayReport(val day: Int, val matchesPlayed: Int, val userMatchPending: Boolean, val seasonEnded: Boolean, val newMessages: Int)
 
     companion object {
-        fun newCareer(seed: Long, profile: ManagerProfile, clubId: Long?): Career {
+        fun newCareer(seed: Long, profile: ManagerProfile, clubId: Long?, pack: fm.engine.data.DatabasePack? = null): Career {
             val world = WorldGenerator.generate(seed, profile)
+            if (pack != null) fm.engine.data.Packs.apply(pack, world)
             val c = Career(world)
             Board.setExpectations(world)
             if (clubId != null && clubId in world.clubs) c.takeOverClub(clubId)
@@ -49,6 +50,7 @@ class Career(val world: World) {
         club.managerId = -1
         world.manager.clubId = clubId
         club.boardConfidence = 65
+        Reserves.autoAssign(world, club)
         world.inbox.add(InboxMessage(world.newId(), world.today, MsgType.WELCOME, "welcome",
             listOf(club.name, club.expectedPosition.toString(), world.manager.name)))
     }
@@ -117,6 +119,7 @@ class Career(val world: World) {
             Development.weekly(world)
             Development.trainingInjuries(world)
             scoutingWeek()
+            Reserves.weekly(world)
             fm.engine.dynamics.Dynamics.weekly(world)
             if (world.manager.clubId >= 0) {
                 val plan = Development.plan(world.userClub)
@@ -351,6 +354,7 @@ class Career(val world: World) {
             p.season = SeasonStats()
             p.suspended = 0
         }
+        Reserves.endSeason(world)
         Transfers.endLoans(world)
         Transfers.expireContracts(world)
         Development.retirements(world)
@@ -445,6 +449,11 @@ class Career(val world: World) {
     fun toggleTransferList(playerId: Long) {
         val p = world.players[playerId] ?: return
         if (p.clubId == world.manager.clubId) p.transferListed = !p.transferListed
+    }
+
+    fun setReserve(playerId: Long, reserve: Boolean) {
+        val p = world.players[playerId] ?: return
+        if (p.playingFor == world.manager.clubId) p.reserve = reserve
     }
 
     fun releasePlayer(playerId: Long) {

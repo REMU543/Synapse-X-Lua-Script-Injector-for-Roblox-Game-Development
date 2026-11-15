@@ -133,6 +133,11 @@ class Player(
     var retrainPosition: Position? = null,
     var retrainWeeks: Int = 0,
     var internationalGoals: Int = 0,
+    /** In the reserve / U21 squad instead of the first team. */
+    var reserve: Boolean = false,
+    var reserveApps: Int = 0,
+    var reserveMinutes: Int = 0,
+    var reserveGoals: Int = 0,
 ) {
     val name: String get() = "$firstName $lastName".trim()
     val shortName: String get() = if (firstName.isEmpty()) lastName else "${firstName.first()}. $lastName"
@@ -231,15 +236,15 @@ class Club(
     val nationId: Int,
     var name: String,
     var shortName: String,
-    val city: String,
+    var city: String,
     var reputation: Int,
-    val stadiumName: String,
+    var stadiumName: String,
     var stadiumCapacity: Int,
     var trainingFacilities: Int,
     var youthFacilities: Int,
     var youthRecruitment: Int,
-    val primaryColor: Long,
-    val secondaryColor: Long,
+    var primaryColor: Long,
+    var secondaryColor: Long,
     val founded: Int,
     var balance: Long,
     var transferBudget: Long,
@@ -613,6 +618,10 @@ class World(
     var tournament: IntlTournament? = null,
     /** History of finished tournaments: "year|winnerNationId|runnerUpNationId". */
     val tournamentHistory: MutableList<String> = mutableListOf(),
+    /** Reserve league (top-flight clubs of the playable nation). */
+    val reserveTable: MutableList<TableRow> = mutableListOf(),
+    var reserveRound: Int = 0,
+    val reserveChampions: MutableList<String> = mutableListOf(),
 ) {
     fun newId(): Long = nextId++
     fun nation(id: Int) = nations.first { it.id == id }

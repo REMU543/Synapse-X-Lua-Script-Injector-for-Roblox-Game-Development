@@ -9,7 +9,9 @@ object Lineups {
         Position.DL, Position.AMC, Position.AMR, Position.AML, Position.MR, Position.ML)
 
     fun pick(world: World, club: Club, tactic: Tactic = club.tactic, maxSubs: Int = 5, familiarity: Double = 0.8): TeamSheet {
-        val squad = world.squad(club.id).filter { it.available }
+        val all = world.squad(club.id).filter { it.available }
+        val first = all.filter { !it.reserve }
+        val squad = if (first.size >= 14) first else all
         val used = HashSet<Long>()
         val slots = tactic.effectiveSlots()
         val assigned = arrayOfNulls<Player>(11)

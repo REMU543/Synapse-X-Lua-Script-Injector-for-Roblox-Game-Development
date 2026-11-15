@@ -15,7 +15,8 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ✅ Data-driven competition rules (points, tiebreakers incl. head-to-head, promotion/relegation links, cup dates)
 - ✅ National teams for all 10 nations: 23-man call-ups each international window (4 per season), friendlies, caps & international goals, injuries on duty
 - ✅ Biennial Asia-Pacific Cup (even years, December): seeded draw, 2 groups of 4, semi-finals, final with extra time/penalties; history of winners
-- ⬜ CSV/JSON database import & editor
+- ✅ Database packs: JSON (clubs + players) and CSV (players) import with validation (errors block, warnings inform); export of the current world as an editable pack; import on the new-career screen, export in Settings; CLI `export-pack` / `validate-pack`
+- 🟡 In-app editor: edit through the exported JSON (any text editor) and re-import; no on-device field editor yet
 
 ## Management
 - ✅ Squad screen (sortable), player profile (attributes, contract, history), squad statuses
@@ -54,6 +55,11 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ✅ Retirement with archive of notable players; retired players can become staff (same identity)
 - ✅ Staff ageing & replacement; unemployed manager pool
 - ✅ Population control; 30-season stress test passes
+
+## Reserves
+- ✅ First team / reserves-U21 split (AI and user), manual moves from squad and player profile
+- ✅ Weekly reserve league for top-flight clubs with table and reserve stats; fringe first-teamers get reserve minutes
+- ✅ Reserve minutes count towards development; seniors stuck in the reserves become unhappy
 
 ## Data hub
 - ✅ Team performance per match vs league average (goals, xG for/against, shots, possession, pass %, corners, fouls)

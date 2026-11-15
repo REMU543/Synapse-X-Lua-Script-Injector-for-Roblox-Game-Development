@@ -103,6 +103,10 @@ class AppSmokeTest {
         shot("06d_set_pieces")
         rule.onNodeWithText("Simpan").performClick(); waitIdle(vm)
         assertTrue("player instruction saved", vm.world!!.userClub!!.tactic.effectiveSlots().any { it.instructions.shootMore })
+        // Squad: reserves tab
+        go(vm, Screen.Squad, "04b_squad")
+        rule.onNode(hasText("Cadangan / U21", substring = true)).performClick(); rule.waitForIdle()
+        shot("04c_reserves")
         // Training schedule & staff market
         go(vm, Screen.Training, "07a_training")
         go(vm, Screen.Staff, "11a_staff")

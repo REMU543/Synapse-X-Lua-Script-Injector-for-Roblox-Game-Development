@@ -136,6 +136,8 @@ object Migrations {
         2 to { w -> w },
         // 3 -> 4: national teams & international fixtures. Created lazily on first use.
         3 to { w -> w },
+        // 4 -> 5: reserve squads & reserve league. Squads are split on the next weekly update.
+        4 to { w -> w },
     )
 
     fun migrate(world: World, fromVersion: Int): World {

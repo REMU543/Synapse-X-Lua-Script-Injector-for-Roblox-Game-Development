@@ -11,7 +11,7 @@ import fm.engine.market.Valuation
  * fictional clubs, players and staff. Fully deterministic for a given seed.
  */
 object WorldGenerator {
-    const val SCHEMA_VERSION = 4
+    const val SCHEMA_VERSION = 5
 
     // Competition ids
     const val IDN_1 = 101; const val IDN_2 = 102; const val IDN_3 = 103; const val IDN_CUP = 110

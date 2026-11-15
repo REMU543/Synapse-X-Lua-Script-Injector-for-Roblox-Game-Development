@@ -113,6 +113,9 @@ fun PlayerScreen(vm: GameViewModel, id: Long) {
                     Button(onClick = { dialog = "talk" }, enabled = fm.engine.dynamics.Interactions.canTalk(w, p), modifier = Modifier.fillMaxWidth()) {
                         Text(vm.t("Bicara dengan pemain", "Talk to player"))
                     }
+                    OutlinedButton(onClick = { vm.act { it.setReserve(p.id, !p.reserve) } }, Modifier.fillMaxWidth()) {
+                        Text(if (p.reserve) vm.t("Promosikan ke tim utama", "Promote to first team") else vm.t("Pindahkan ke tim cadangan/U21", "Move to reserves/U21"))
+                    }
                     Button(onClick = { dialog = "renew" }, Modifier.fillMaxWidth()) { Text(vm.t("Tawarkan kontrak baru", "Offer new contract")) }
                     OutlinedButton(onClick = { vm.act { it.toggleTransferList(p.id) } }, Modifier.fillMaxWidth()) {
                         Text(if (p.transferListed) vm.t("Hapus dari daftar jual", "Remove from transfer list") else vm.t("Masukkan daftar jual", "Add to transfer list"))

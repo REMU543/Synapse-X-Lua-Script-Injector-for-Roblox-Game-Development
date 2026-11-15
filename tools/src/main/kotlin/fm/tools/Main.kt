@@ -16,6 +16,8 @@ import java.io.File
  *   simulate [--seasons N] [--seed S]   headless long-term simulation with a per-season report
  *   play [--seed S] [--slot NAME]       text-mode career (Indonesian), saves to ./saves
  *   validate --slot NAME                check a save file
+ *   export-pack [--seed S] [--out F]    export the default world as an editable JSON database pack
+ *   validate-pack --file F              validate a JSON pack or a players CSV
  */
 fun main(args: Array<String>) {
     val cmd = args.firstOrNull() ?: "play"
@@ -26,6 +28,20 @@ fun main(args: Array<String>) {
             val w = SaveStore(File("saves")).load(opt("slot", "karier1"))
             val issues = Validator.validate(w)
             println(if (issues.isEmpty()) "OK: save valid (${w.players.size} pemain, musim ${w.season})" else issues.joinToString("\n"))
+        }
+        "export-pack" -> {
+            val w = WorldGenerator.generate(opt("seed", "2026").toLong(), defaultManager())
+            val out = File(opt("out", "database.json"))
+            out.writeText(fm.engine.data.Packs.toJson(fm.engine.data.Packs.export(w, "Default world")))
+            println("Exported ${w.clubs.size} clubs and ${w.players.size} players to ${out.path}")
+        }
+        "validate-pack" -> {
+            val f = File(opt("file", "database.json"))
+            val text = f.readText()
+            val pack = if (text.trimStart().startsWith("{")) fm.engine.data.Packs.parseJson(text) else fm.engine.data.Packs.parsePlayersCsv(text, f.name)
+            val issues = fm.engine.data.Packs.validate(pack, WorldGenerator.generate(1, defaultManager()))
+            issues.forEach { println((if (it.error) "ERROR " else "WARN  ") + it.message) }
+            println(if (issues.none { it.error }) "OK: ${pack.clubs.size} clubs, ${pack.players.size} players" else "INVALID: ${issues.count { it.error }} errors")
         }
         else -> TextGame(opt("seed", System.currentTimeMillis().toString()).toLong(), opt("slot", "karier1")).run()
     }

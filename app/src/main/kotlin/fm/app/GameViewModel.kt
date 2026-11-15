@@ -155,10 +155,41 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun slots(): List<SaveStore.SlotInfo> = store.list()
 
+    // ---------------------------------------------------------------- database packs
+    var pendingPack: fm.engine.data.DatabasePack? by mutableStateOf(null)
+    var packIssues: List<fm.engine.data.Packs.Issue> by mutableStateOf(emptyList())
+
+    /** Parses and validates a JSON pack or a CSV of players picked by the user. */
+    fun importPack(uri: android.net.Uri) {
+        try {
+            val app = getApplication<Application>()
+            val text = app.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: return
+            val pack = if (text.trimStart().startsWith("{")) fm.engine.data.Packs.parseJson(text)
+                else fm.engine.data.Packs.parsePlayersCsv(text, uri.lastPathSegment ?: "CSV")
+            val issues = fm.engine.data.Packs.validate(pack, previewWorld(1))
+            packIssues = issues
+            pendingPack = if (issues.any { it.error }) null else pack
+            toast = if (issues.any { it.error }) t("Database tidak valid: ", "Invalid database: ") + issues.count { it.error } + t(" kesalahan", " errors")
+                else t("Database dimuat: ", "Database loaded: ") + "${pack.clubs.size} " + t("klub", "clubs") + ", ${pack.players.size} " + t("pemain", "players")
+        } catch (e: Exception) {
+            packIssues = listOf(fm.engine.data.Packs.Issue(true, e.message ?: "parse error")); pendingPack = null
+            toast = t("Gagal membaca file.", "Could not read the file.")
+        }
+    }
+
+    fun clearPack() { pendingPack = null; packIssues = emptyList() }
+
+    fun exportPack(uri: android.net.Uri) = work {
+        val w = world ?: return@work
+        val text = fm.engine.data.Packs.toJson(fm.engine.data.Packs.export(w, "Export ${w.season}"))
+        getApplication<Application>().contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(text) }
+        toast = t("Database diekspor.", "Database exported.")
+    }
+
     fun newCareer(first: String, last: String, nationId: Int, clubId: Long?, seed: Long, style: ManagerStyle) = work {
         val profile = ManagerProfile(first, last, nationId, Cal.of(1988, 1, 1), t("Lisensi B AFC", "AFC B Licence"),
             t("Mantan pemain amatir", "Former amateur player"), style, reputation = 35)
-        val c = Career.newCareer(seed, profile, clubId)
+        val c = Career.newCareer(seed, profile, clubId, pendingPack)
         c.world.settings.lang = uiLang
         career = c
         slot = "karier_${seed % 100000}"
@@ -167,8 +198,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Preview world used by the new-career screen to list clubs (same seed => same world). */
-    fun previewWorld(seed: Long): World = fm.engine.world.WorldGenerator.generate(seed,
-        ManagerProfile("", "", 1, Cal.of(1988, 1, 1), "", "", ManagerStyle("4-4-2", 0.0, 0.5, 0.5, 0.5, 0.5), 30))
+    fun previewWorld(seed: Long, withPack: Boolean = false): World = fm.engine.world.WorldGenerator.generate(seed,
+        ManagerProfile("", "", 1, Cal.of(1988, 1, 1), "", "", ManagerStyle("4-4-2", 0.0, 0.5, 0.5, 0.5, 0.5), 30)).also { w ->
+        if (withPack) pendingPack?.let { fm.engine.data.Packs.apply(it, w) }
+    }
 
     fun load(slotName: String) = work {
         val (w, from) = store.loadWithRecovery(slotName)

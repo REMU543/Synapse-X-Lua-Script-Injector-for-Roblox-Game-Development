@@ -57,7 +57,7 @@ object Dynamics {
 
     fun factors(world: World, p: Player): List<Factor> {
         val out = mutableListOf<Factor>()
-        val share = playingShare(world, p)
+        val share = playingShare(world, p).let { if (p.reserve && p.age(world.today) <= 21 && it >= 0) maxOf(it, 0.5) else it }
         val exp = expectedShare(p.contract?.squadStatus)
         if (share >= 0) {
             val gap = share - exp
@@ -67,6 +67,9 @@ object Dynamics {
                 gap > 0.15 -> out += Factor("Senang dengan waktu bermain", "Happy with playing time", 8)
             }
         }
+        if (p.reserve && p.age(world.today) >= 23 && p.contract?.squadStatus in setOf(SquadStatus.KEY, SquadStatus.FIRST_TEAM, SquadStatus.ROTATION))
+            out += Factor("Ingin kembali ke tim utama", "Wants first-team football", -15)
+        if (p.reserve && p.age(world.today) <= 21 && p.reserveApps >= 5) out += Factor("Berkembang di tim cadangan", "Developing in the reserves", 4)
         val c = p.contract
         if (c != null && c.endYear <= world.season + 1 && p.age(world.today) < 32) out += Factor("Kontrak hampir habis", "Contract running out", -8)
         if (c != null) {

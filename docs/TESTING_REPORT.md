@@ -7,7 +7,7 @@ emulator (no KVM), so the Android UI is tested with Robolectric on the JVM.
 
 | Suite | Command | Result |
 |---|---|---|
-| Engine unit/integration (29 tests) | `./gradlew :engine:test` | ✅ all pass (~1 min) |
+| Engine unit/integration (34 tests) | `./gradlew :engine:test` | ✅ all pass (~1 min) |
 | Android UI tests, landscape phone + tablet (Robolectric + Compose, with screenshots) | `./gradlew :app:testDebugUnitTest` | ✅ pass |
 | 30-season stress test | `./gradlew :engine:test --tests '*StressTest*' -Pstress` | ✅ pass (~6 min) |
 

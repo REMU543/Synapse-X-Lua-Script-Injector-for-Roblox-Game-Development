@@ -95,7 +95,7 @@ object Development {
         }
         val facilities = (club?.trainingFacilities ?: 4) / 20.0
         val train = 0.45 + 0.3 * facilities + 0.25 * coach / 20.0
-        val gamesShare = (p.season.minutes / (90.0 * weeksIntoSeason(world).coerceAtLeast(1))).coerceIn(0.0, 1.0)
+        val gamesShare = ((p.season.minutes + p.reserveMinutes * 0.6) / (90.0 * weeksIntoSeason(world).coerceAtLeast(1))).coerceIn(0.0, 1.0)
         val play = if (age < 19) 0.75 + 0.35 * gamesShare else 0.55 + 0.6 * gamesShare
         val prof = 0.55 + 0.9 * p.personality.professionalism / 20.0
         val plan = plan(club)

@@ -240,7 +240,10 @@ fun NewCareerScreen(vm: GameViewModel) {
     var last by remember { mutableStateOf("") }
     var seedText by remember { mutableStateOf((System.currentTimeMillis() % 1_000_000).toString()) }
     val seed = seedText.toLongOrNull() ?: 1L
-    val preview = remember(seed) { vm.previewWorld(seed) }
+    val preview = remember(seed, vm.pendingPack) { vm.previewWorld(seed, withPack = true) }
+    val picker = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importPack(uri)
+    }
     var formation by remember { mutableIntStateOf(0) }
     var attacking by remember { mutableFloatStateOf(0.6f) }
     var selected by remember { mutableStateOf<Long?>(null) }
@@ -265,6 +268,17 @@ fun NewCareerScreen(vm: GameViewModel) {
             OutlinedButton(onClick = { vm.newCareer(first.ifBlank { "Manajer" }, last, 1, null, seed, style) }, modifier = Modifier.fillMaxWidth()) {
                 Text(vm.t("Mulai tanpa klub", "Start unemployed"))
             }
+            Spacer(Modifier.height(8.dp))
+            Text(vm.t("Database", "Database"), style = MaterialTheme.typography.labelLarge)
+            val pack = vm.pendingPack
+            SmallText(pack?.let { "${it.name}: ${it.clubs.size} " + vm.t("klub", "clubs") + ", ${it.players.size} " + vm.t("pemain", "players") }
+                ?: vm.t("Bawaan (fiktif)", "Default (fictional)"), MaterialTheme.colorScheme.onSurfaceVariant)
+            Row {
+                OutlinedButton(onClick = { picker.launch(arrayOf("application/json", "text/*", "text/csv", "*/*")) }) { Text(vm.t("Impor JSON/CSV", "Import JSON/CSV"), fontSize = 12.sp) }
+                if (pack != null) TextButton(onClick = { vm.clearPack() }) { Text(vm.t("Hapus", "Clear"), fontSize = 12.sp) }
+            }
+            for (i in vm.packIssues.take(6)) SmallText((if (i.error) "✖ " else "⚠ ") + i.message, if (i.error) LocalFm.current.bad else LocalFm.current.warn)
+            if (vm.packIssues.size > 6) SmallText("… +${vm.packIssues.size - 6}")
             TextButton(onClick = { vm.navigate(Screen.Start, true) }) { Text(vm.t("Kembali", "Back")) }
         }
         Column(Modifier.weight(1f).fillMaxHeight()) {
@@ -435,8 +449,19 @@ fun SquadScreen(vm: GameViewModel) {
     val c = vm.career ?: return
     val w = c.world
     val club = w.userClub ?: run { Text(vm.t("Anda belum memiliki klub.", "You have no club."), Modifier.padding(16.dp)); return }
-    val squad = w.squad(club.id)
-    val ref = squad.map { it.ca }.sortedDescending().take(11).average().takeIf { !it.isNaN() } ?: 100.0
+    var team by remember { mutableIntStateOf(0) }
+    val squad = w.squad(club.id).filter { it.reserve == (team == 1) }
+    val ref = w.squad(club.id).map { it.ca }.sortedDescending().take(11).average().takeIf { !it.isNaN() } ?: 100.0
+    Column {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        ChipRow(listOf(vm.t("Tim Utama", "First Team") + " (${w.squad(club.id).count { !it.reserve }})", vm.t("Cadangan / U21", "Reserves / U21") + " (${w.squad(club.id).count { it.reserve }})"), team) { team = it }
+        if (team == 1 && club.leagueId == fm.engine.game.Reserves.RESERVE_LEAGUE) {
+            val t = fm.engine.game.Reserves.table(w)
+            val pos = t.indexOfFirst { it.clubId == club.id } + 1
+            SmallText(if (t.isEmpty()) vm.t("Liga Cadangan: belum dimulai", "Reserve league: not started") else vm.t("Liga Cadangan: posisi ", "Reserve league: position ") + "$pos/${t.size}" + (t.firstOrNull { it.clubId == club.id }?.let { " · ${it.points} " + vm.t("poin", "pts") } ?: ""),
+                MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
     BoxWithConstraints {
         val wide = maxWidth >= 760.dp
         val cols = mutableListOf<Col<Player>>(
@@ -463,7 +488,9 @@ fun SquadScreen(vm: GameViewModel) {
             cols += Col(vm.t("Gaji", "Wage"), 72.dp, { it.contract?.wage ?: 0L }) { SmallText(Money.format(it.contract?.wage ?: 0, vm.lang)) }
             cols += Col(vm.t("Kontrak", "Contract"), 56.dp, { it.contract?.endYear ?: 0 }) { SmallText("${it.contract?.endYear ?: "-"}") }
         }
+        if (team == 1) cols += Col(vm.t("Main Cad.", "Res Apps"), 60.dp, { it.reserveApps }) { SmallText("${it.reserveApps} / ${it.reserveGoals}") }
         SortableTable(squad, cols, key = { it.id }, onClick = { vm.navigate(Screen.PlayerDetail(it.id)) }, defaultSort = 0)
+    }
     }
 }
 
