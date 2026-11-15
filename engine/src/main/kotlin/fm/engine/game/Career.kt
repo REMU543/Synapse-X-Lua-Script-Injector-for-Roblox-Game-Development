@@ -108,6 +108,8 @@ class Career(val world: World) {
         // 2. Matches
         var played = 0
         for (f in fixturesOn(today).sortedBy { it.id }) { playAiFixture(f); played++ }
+        // 2b. International football (call-ups, friendlies, tournament)
+        fm.engine.international.International.daily(world)
         // 3. Daily recovery
         Development.daily(world)
         // 4. Weekly training (Mondays)

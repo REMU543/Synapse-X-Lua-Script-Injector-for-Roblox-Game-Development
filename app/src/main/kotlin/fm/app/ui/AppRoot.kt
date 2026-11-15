@@ -75,10 +75,12 @@ val navItems = listOf(
     NavItem(Screen.Tactics, "Taktik", "Tactics", Icons.Filled.Build, 1),
     NavItem(Screen.Training, "Latihan", "Training", Icons.Filled.Refresh, 1),
     NavItem(Screen.Competitions, "Jadwal & Kompetisi", "Fixtures & Competitions", Icons.Filled.DateRange, 2),
+    NavItem(Screen.DataHub, "Pusat Data", "Data Hub", Icons.Filled.Info, 2),
+    NavItem(Screen.International, "Internasional", "International", Icons.Filled.Star, 2),
     NavItem(Screen.Scouting, "Pencarian Bakat", "Scouting", Icons.Filled.Search, 2),
     NavItem(Screen.Transfers, "Transfer", "Transfers", Icons.Filled.ShoppingCart, 2),
     NavItem(Screen.Club, "Klub", "Club", Icons.Filled.Place, 3),
-    NavItem(Screen.Finances, "Keuangan", "Finances", Icons.Filled.Info, 3),
+    NavItem(Screen.Finances, "Keuangan", "Finances", Icons.Filled.List, 3),
     NavItem(Screen.Staff, "Staf", "Staff", Icons.Filled.Face, 3),
     NavItem(Screen.Profile, "Manajer", "Manager", Icons.Filled.AccountCircle, 4),
     NavItem(Screen.Settings, "Pengaturan", "Settings", Icons.Filled.Settings, 4),
@@ -178,6 +180,8 @@ private fun ScreenContent(vm: GameViewModel, screen: Screen) {
         is Screen.ClubDetail -> ClubScreen(vm, screen.id)
         Screen.Finances -> FinanceScreen(vm)
         Screen.Staff -> StaffScreen(vm)
+        Screen.International -> InternationalScreen(vm)
+        Screen.DataHub -> DataHubScreen(vm)
         Screen.Inbox -> InboxScreen(vm)
         Screen.Profile -> ProfileScreen(vm)
         Screen.Settings -> SettingsScreen(vm)

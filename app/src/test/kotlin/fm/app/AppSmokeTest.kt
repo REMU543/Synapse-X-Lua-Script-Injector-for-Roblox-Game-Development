@@ -171,6 +171,8 @@ class AppSmokeTest {
         assertEquals(Screen.Home, vm.screen)
         assertNull(vm.matchDay)
         shot("25_home_after")
+        go(vm, Screen.DataHub, "26_datahub")
+        go(vm, Screen.International, "27_international")
         // Save and reload
         rule.runOnUiThread { vm.save() }; waitIdle(vm)
         val slot = vm.slot

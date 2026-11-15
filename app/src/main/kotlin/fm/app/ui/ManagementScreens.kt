@@ -65,6 +65,7 @@ fun PlayerScreen(vm: GameViewModel, id: Long) {
                 KeyValue(vm.t("Tinggi / Berat", "Height / Weight"), "${p.heightCm} cm / ${p.weightKg} kg")
                 KeyValue(vm.t("Kepribadian", "Personality"), if (c.knowledge(p) >= 70) p.personality.describe(vm.lang) else "?")
                 KeyValue(vm.t("Kondisi / Moral", "Condition / Morale"), "${p.condition}% / ${moraleLabel(p.morale)}")
+                if (p.internationalCaps > 0) KeyValue(vm.t("Timnas (caps / gol)", "International (caps / goals)"), "${p.internationalCaps} / ${p.internationalGoals}")
                 if (p.injuryDays > 0) KeyValue(vm.t("Cedera", "Injury"), "${p.injuryName} (${p.injuryDays}h)", MaterialTheme.colorScheme.error)
                 if (c.knowledge(p) < 100) KeyValue(vm.t("Pengetahuan scout", "Scout knowledge"), "${c.knowledge(p)}%")
             }

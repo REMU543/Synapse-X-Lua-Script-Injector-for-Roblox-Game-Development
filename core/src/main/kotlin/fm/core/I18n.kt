@@ -113,6 +113,10 @@ object I18n {
         "staff_refused" to "Kandidat menolak: reputasi klub terlalu rendah.",
         "staff_no_club" to "Anda belum memiliki klub.",
         "staff_unknown" to "Staf tidak tersedia.",
+        "intl_callup" to "{0} dipanggil timnas {1}.",
+        "intl_injury" to "{0} cedera saat membela timnas {1} dan absen {2} hari.",
+        "intl_tournament_start" to "{0} dimulai!",
+        "intl_champion" to "{0} menjuarai {1}!",
     )
     private val en = mapOf(
         "welcome" to "Welcome to {0}! The board expects a finish around position {1}. Good luck, {2}.",
@@ -222,6 +226,10 @@ object I18n {
         "staff_refused" to "The candidate refused: club reputation too low.",
         "staff_no_club" to "You have no club.",
         "staff_unknown" to "Staff member not available.",
+        "intl_callup" to "{0} has been called up by {1}.",
+        "intl_injury" to "{0} was injured on duty with {1} and is out for {2} days.",
+        "intl_tournament_start" to "The {0} kicks off!",
+        "intl_champion" to "{0} win the {1}!",
     )
 
     fun t(lang: Lang, key: String, args: List<String> = emptyList()): String {

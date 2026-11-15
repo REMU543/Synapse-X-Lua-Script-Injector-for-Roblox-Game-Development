@@ -13,7 +13,8 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ✅ Indonesia: 3 tiers (18/18/20) with promotion/relegation + national cup (56 clubs, byes)
 - ✅ Malaysia, Thailand, Vietnam, Japan leagues; continental cup (two-legged ties, single-leg final)
 - ✅ Data-driven competition rules (points, tiebreakers incl. head-to-head, promotion/relegation links, cup dates)
-- ⬜ National teams & international tournaments
+- ✅ National teams for all 10 nations: 23-man call-ups each international window (4 per season), friendlies, caps & international goals, injuries on duty
+- ✅ Biennial Asia-Pacific Cup (even years, December): seeded draw, 2 groups of 4, semi-finals, final with extra time/penalties; history of winners
 - ⬜ CSV/JSON database import & editor
 
 ## Management
@@ -53,6 +54,11 @@ Legend: ✅ implemented and tested · 🟡 implemented, basic / partly tested ·
 - ✅ Retirement with archive of notable players; retired players can become staff (same identity)
 - ✅ Staff ageing & replacement; unemployed manager pool
 - ✅ Population control; 30-season stress test passes
+
+## Data hub
+- ✅ Team performance per match vs league average (goals, xG for/against, shots, possession, pass %, corners, fouls)
+- ✅ xG trend chart for the last 10 matches
+- ✅ Squad statistics table with per-90 values and caps; league leaders (goals, assists, rating, clean sheets)
 
 ## Match day (management-sim style)
 - ✅ Pre-match press conference (context-aware questions; answers affect morale, media hype, board)

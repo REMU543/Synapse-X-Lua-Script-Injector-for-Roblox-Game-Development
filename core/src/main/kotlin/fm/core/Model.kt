@@ -132,6 +132,7 @@ class Player(
     /** Individual training: position being learnt (null = none). */
     var retrainPosition: Position? = null,
     var retrainWeeks: Int = 0,
+    var internationalGoals: Int = 0,
 ) {
     val name: String get() = "$firstName $lastName".trim()
     val shortName: String get() = if (firstName.isEmpty()) lastName else "${firstName.first()}. $lastName"
@@ -522,6 +523,54 @@ data class PressQuestion(val id: Int, val key: String, val args: List<String> = 
 data class PressConference(val day: Int, val pre: Boolean, val fixtureId: Long, val questions: List<PressQuestion>, var answered: Int = 0)
 
 @Serializable
+class NationalTeam(
+    val nationId: Int,
+    val managerName: String,
+    /** Current call-up (player ids). */
+    val squad: MutableList<Long> = mutableListOf(),
+    var played: Int = 0,
+    var won: Int = 0,
+    var drawn: Int = 0,
+    var lost: Int = 0,
+    var goalsFor: Int = 0,
+    var goalsAgainst: Int = 0,
+    /** Recent results: "day|opponentNationId|gf|ga|kind". */
+    val results: MutableList<String> = mutableListOf(),
+    val titles: MutableList<Int> = mutableListOf(),
+)
+
+@Serializable
+class IntlFixture(
+    val id: Long,
+    val day: Int,
+    val home: Int,
+    val away: Int,
+    /** "F" friendly, "G" group stage, "SF" semi-final, "F1" final. */
+    val stage: String,
+    val group: Int = -1,
+    var played: Boolean = false,
+    var homeGoals: Int = 0,
+    var awayGoals: Int = 0,
+    var penHome: Int = -1,
+    var penAway: Int = -1,
+    var winner: Int = -1,
+    var scorers: List<Long> = emptyList(),
+)
+
+@Serializable
+class IntlTournament(
+    val year: Int,
+    val nameId: String,
+    val nameEn: String,
+    /** Two groups of four nation ids. */
+    val groups: List<List<Int>>,
+    var winner: Int = -1,
+    var runnerUp: Int = -1,
+) {
+    fun name(lang: Lang) = if (lang == Lang.ID) nameId else nameEn
+}
+
+@Serializable
 data class WorldSettings(
     var lang: Lang = Lang.ID,
     var autosave: Boolean = true,
@@ -559,6 +608,11 @@ class World(
     var mediaHype: Int = 50,
     /** Dressing-room atmosphere, 0–100 (cached weekly). */
     var atmosphere: Int = 60,
+    val nationalTeams: MutableMap<Int, NationalTeam> = linkedMapOf(),
+    val intlFixtures: MutableList<IntlFixture> = mutableListOf(),
+    var tournament: IntlTournament? = null,
+    /** History of finished tournaments: "year|winnerNationId|runnerUpNationId". */
+    val tournamentHistory: MutableList<String> = mutableListOf(),
 ) {
     fun newId(): Long = nextId++
     fun nation(id: Int) = nations.first { it.id == id }

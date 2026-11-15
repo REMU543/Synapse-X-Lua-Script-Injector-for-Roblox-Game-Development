@@ -96,3 +96,10 @@ Seven daily sessions with a load each. Development of an attribute is multiplied
 train it; the weekly load scales intensity and training-injury risk; rest/recovery days restore
 condition, fitness days drain it. Individual focus doubles growth of one attribute. Retraining a
 position takes 8–26 weeks depending on adaptability and how related the position is.
+
+## International football
+Ten national teams. Four international windows per season (Sep, Oct, Nov, Mar), each with two
+friendlies. In even years the Asia-Pacific Cup is played in December: the eight strongest nations by
+squad quality are drawn into two seeded groups of four; group winners and runners-up meet in the
+semi-finals; the final can go to extra time and penalties. Call-ups lift morale; matches cost condition
+and can injure players; caps and international goals are recorded on the player.

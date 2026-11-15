@@ -43,3 +43,10 @@
   individual attribute focus and position retraining.
 - Staff: staff market pool per role, hire/dismiss from a new Staff screen.
 - Save schema v3 (defaults only). 28 engine tests + 2 UI tests green.
+
+## 2026-11-15 — National teams, international tournament, data hub
+- `international` package: national teams, call-ups per window, friendlies, biennial tournament
+  (groups → semi-finals → final), caps/goals, injuries, inbox notices. Simplification: club fixtures are
+  not paused during windows; national duty costs condition instead.
+- `DataHub`: team averages vs league, xG trend, leaders, per-90 stats from recorded fixture stats.
+- UI: International and Data Hub screens in the sidebar; caps on player profile. Save schema v4.

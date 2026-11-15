@@ -134,6 +134,8 @@ object Migrations {
         1 to { w -> w },
         // 2 -> 3: roles/duties/player instructions, weekly training, individual training. Defaults only.
         2 to { w -> w },
+        // 3 -> 4: national teams & international fixtures. Created lazily on first use.
+        3 to { w -> w },
     )
 
     fun migrate(world: World, fromVersion: Int): World {
